@@ -1,0 +1,24 @@
+{
+  "name": "@frande/ecf",
+  "version": "0.1.0",
+  "description": "SDK de Frande ECF: facturación electrónica (e-CF) DGII República Dominicana",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/franklindemanchedelizon/Integracion_Frande-ECF.git",
+    "directory": "sdk/typescript"
+  },
+  "keywords": ["e-cf", "dgii", "facturacion-electronica", "republica-dominicana", "frande"]
+}

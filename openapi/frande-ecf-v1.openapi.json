@@ -1,0 +1,3261 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ECF Frande One · API de Facturación Electrónica",
+    "version": "1.0.0",
+    "description": "API REST para emisión, recepción y gestión de Comprobantes Fiscales Electrónicos (e-CF) conforme a la DGII de República Dominicana.\n\n## Ambientes\n\n| Ambiente | Path prefix | Uso |\n|----------|-------------|-----|\n| `TesteCF` | `/TesteCF/...` | Desarrollo y pruebas |\n| `CerteCF` | `/CerteCF/...` | Certificación DGII |\n| `eCF` | `/eCF/...` | Producción |\n\n## Autenticación\n\nLa API soporta dos métodos:\n- **Bearer Token (JWT)**: Obtener via `POST /{env}/customer/authentication`, enviar en header `Authorization: Bearer {idToken}`\n- **API Key**: Enviar en header `X-API-KEY: {api_key}`\n\nPara endpoints de emisión y consulta, usar **API Key**. Para endpoints de tenant/perfil, usar **Bearer Token**.\n\n## Formato de respuesta\n\n```json\n{ \"success\": true, \"data\": { ... }, \"requestId\": \"uuid\" }\n{ \"success\": false, \"error\": { \"code\": \"...\", \"message\": \"...\" }, \"requestId\": \"uuid\" }\n```\n\n## Contrato público (/v1)\n\nEsta documentación describe el contrato público versionado: todas las rutas son relativas a `https://ecf.frandeone.com/v1`. Elija el ambiente en la ruta (`TesteCF` para pruebas, `eCF` para producción). Lo que no aparece aquí no forma parte del contrato y, bajo `/v1`, responde 404.\n\n## Encabezados de clave aceptados\n\nLa clave del ECF se acepta por cualquiera de estas formas (equivalentes): `X-API-Key: <clave>` (recomendada), `Authorization: Bearer <clave>`, `Authorization: <clave>` (sin Bearer) o `ApiKey: <clave>`.",
+    "contact": {
+      "name": "Frande Connection SRL",
+      "email": "soporte@frandeone.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://ecf.frandeone.com/v1",
+      "description": "Contrato público. Pruebas: env=TesteCF; producción: env=eCF",
+      "variables": {
+        "env": {
+          "enum": [
+            "TesteCF",
+            "eCF"
+          ],
+          "default": "TesteCF",
+          "description": "Ambiente. El ambiente real va en la ruta ({env})."
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Estado del servicio"
+    },
+    {
+      "name": "Emisión e-CF",
+      "description": "Emitir, validar y consultar documentos electrónicos"
+    },
+    {
+      "name": "Recepción",
+      "description": "Documentos recibidos y aprobación comercial"
+    },
+    {
+      "name": "Anulación",
+      "description": "Anulación de secuencias eNCF"
+    },
+    {
+      "name": "Directorio",
+      "description": "Consulta directorio de contribuyentes DGII"
+    },
+    {
+      "name": "Certificados",
+      "description": "Gestión de certificados digitales .p12"
+    },
+    {
+      "name": "Tenant",
+      "description": "Registro, perfil y configuración"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Avisos firmados con HMAC-SHA256. Los destinos se crean en el portal (Credenciales de API), uno o varios por ambiente; la API los consulta en solo lectura. Un evento de Pruebas (TesteCF y CerteCF) solo llega a destinos de Pruebas y uno de Producción (eCF) solo a destinos de Producción. Encabezados: X-ECF-Signature (sha256=HMAC-SHA256 hex de `timestamp.nonce.cuerpo` con el secreto del destino), X-ECF-Timestamp, X-ECF-Nonce, X-ECF-Event, X-ECF-Environment, X-ECF-Delivery-Id. Eventos: ecf.status_update, ecf.accepted, ecf.conditionally_accepted, ecf.rejected, ecf.received, ecf.commercial_status, ecf.buyer_delivery, anecf.completed y certificate.expiring (solo producción); quota.threshold y contingency.* llegarán después. Reintentos a 1, 5, 30, 120 y 720 minutos; las entregas fallidas se reenvían desde el portal."
+    },
+    {
+      "name": "Verificación",
+      "description": "Verificación de email, RNC y contacto público"
+    },
+    {
+      "name": "Cuenta",
+      "description": "Probar conexión y casos de prueba de integración"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Recomendado. La clave del ECF (foecf_test_..., foecf_live_..., ecf_sk_...) en X-API-Key."
+      },
+      "ApiKeyBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API key",
+        "description": "La misma clave como `Authorization: Bearer <clave>`. Solo vale si el valor tiene forma de clave del ECF; un JWT va por su camino."
+      },
+      "ApiKeyAuthorization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "La misma clave como `Authorization: <clave>`, sin la palabra Bearer."
+      },
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "ApiKey",
+        "description": "La misma clave como `ApiKey: <clave>`."
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string",
+                "description": "Mensaje en español; puede ser más específico que el de la tabla de códigos."
+              },
+              "details": {
+                "type": "object",
+                "description": "Opcional. En producción solo `validationErrors` (lista de campos a corregir)."
+              }
+            }
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Identificador de la petición; indícalo a soporte."
+          }
+        },
+        "example": {
+          "success": false,
+          "error": {
+            "code": "ECF_VALIDATION_FAILED",
+            "message": "Validación fallida",
+            "details": {
+              "validationErrors": [
+                "Campo obligatorio faltante"
+              ]
+            }
+          },
+          "requestId": "3f8b1c2e-0000-4000-8000-000000000000"
+        }
+      },
+      "RateLimited": {
+        "description": "Demasiadas solicitudes — rate limit por tenant/IP excedido. Reintente tras `Retry-After` segundos.",
+        "headers": {
+          "RateLimit-Limit": {
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Solicitudes permitidas por ventana"
+          },
+          "RateLimit-Remaining": {
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Restantes en la ventana actual"
+          },
+          "RateLimit-Reset": {
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Segundos hasta que se resetea"
+          },
+          "Retry-After": {
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Segundos a esperar antes del próximo intento"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "RATE_LIMITED",
+                "message": "Demasiadas solicitudes"
+              },
+              "requestId": "00000000-0000-0000-0000-000000000000"
+            }
+          }
+        }
+      },
+      "AuthTokens": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "idToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "ECFEmitResponse": {
+        "type": "object",
+        "properties": {
+          "rnc": {
+            "type": "string",
+            "example": "130000001"
+          },
+          "ecf": {
+            "type": "string",
+            "example": "E310000000001"
+          },
+          "internalTrackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "securityCode": {
+            "type": "string",
+            "example": "A1B2C3"
+          },
+          "qr_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "signedDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isRFCE": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ECFDocument": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "tenant_id": {
+            "type": "integer"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "TesteCF",
+              "CerteCF",
+              "eCF"
+            ]
+          },
+          "tipo_ecf": {
+            "type": "string",
+            "enum": [
+              "31",
+              "32",
+              "33",
+              "34",
+              "41",
+              "43",
+              "44",
+              "45",
+              "46",
+              "47"
+            ]
+          },
+          "encf": {
+            "type": "string",
+            "example": "E310000000001"
+          },
+          "rnc_emisor": {
+            "type": "string"
+          },
+          "rnc_comprador": {
+            "type": "string"
+          },
+          "track_id": {
+            "type": "string"
+          },
+          "internal_track_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado_dgii": {
+            "type": "string",
+            "enum": [
+              "recibido",
+              "procesando",
+              "aceptado",
+              "rechazado",
+              "error",
+              "en_cola"
+            ]
+          },
+          "dgii_code": {
+            "type": "string"
+          },
+          "dgii_message": {
+            "type": "string"
+          },
+          "monto_total": {
+            "type": "number"
+          },
+          "security_code": {
+            "type": "string"
+          },
+          "qr_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ECFPayloadE31": {
+        "type": "object",
+        "description": "Payload JSON para e-CF tipo E31 (Factura de Crédito Fiscal)",
+        "example": {
+          "ECF": {
+            "Encabezado": {
+              "Version": "1.0",
+              "IdDoc": {
+                "TipoeCF": "31",
+                "eNCF": "E310000000001",
+                "FechaVencimientoSecuencia": "31-12-2026",
+                "IndicadorNotaCredito": "0",
+                "IndicadorEnvioDiferido": "0",
+                "TipoIngresos": "01",
+                "TipoPago": "1"
+              },
+              "Emisor": {
+                "RNCEmisor": "130000001",
+                "RazonSocialEmisor": "Empresa Emisora SRL",
+                "DireccionEmisor": "Calle Principal #1",
+                "FechaEmision": "15-04-2026"
+              },
+              "Comprador": {
+                "RNCComprador": "401000001",
+                "RazonSocialComprador": "Cliente Ejemplo SRL",
+                "DireccionComprador": "Av. Independencia #100"
+              },
+              "Totales": {
+                "MontoGravadoTotal": 1000,
+                "MontoGravadoI1": 1000,
+                "ITBIS1": 18,
+                "TotalITBIS": 180,
+                "TotalITBIS1": 180,
+                "MontoTotal": 1180
+              }
+            },
+            "DetallesItems": {
+              "Item": [
+                {
+                  "NumeroLinea": "1",
+                  "IndicadorFacturacion": "1",
+                  "NombreItem": "Servicio de consultoría",
+                  "IndicadorBienoServicio": "2",
+                  "CantidadItem": "1",
+                  "MontoItem": 1000,
+                  "DescuentoMonto": 0,
+                  "MontoItemTotal": 1000
+                }
+              ]
+            }
+          }
+        }
+      },
+      "TenantPublic": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "rnc": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "webhook_url": {
+            "type": "string"
+          },
+          "monthly_doc_count": {
+            "type": "integer"
+          },
+          "monthly_doc_limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "CertificateInfo": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "daysUntilExpiry": {
+            "type": "integer"
+          },
+          "isExpired": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "ACCOUNT_PROBE_FAILED",
+          "ACCOUNT_SUSPENDED",
+          "ACECF_DGII_ERROR",
+          "ACECF_ERROR",
+          "ACECF_PERSIST_FAILED",
+          "ALREADY_PROCESSED",
+          "ANECF_ERROR",
+          "ANECF_SECUENCIA_INVALIDA",
+          "ANECF_TIPO_CRUZADO",
+          "ANECF_TIPO_MISMATCH",
+          "ANECF_TOO_MANY_GROUPS",
+          "ANECF_TOO_MANY_SEQUENCES",
+          "API_KEY_INVALID",
+          "API_KEY_MISSING",
+          "BAD_REQUEST",
+          "CERTIFICATION_RECEIPT_ONLY",
+          "CERT_EXPIRED",
+          "CERT_INCOMPLETE",
+          "CERT_NOT_FOUND",
+          "CERT_PRECHECK_FAILED",
+          "CERT_SESSION_CLIENT_NOT_LINKED",
+          "CERT_SESSION_EMAIL_FAILED",
+          "CERT_SESSION_INVALID",
+          "CERT_UPLOAD_NOT_ALLOWED_FOR_KEY",
+          "DGII_QUERY_FAILED",
+          "DGII_SEND_ERROR",
+          "DGII_TIMEOUT",
+          "DGII_TOKEN_EXTRACT_FAILED",
+          "DGII_TOKEN_MISSING",
+          "DOCUMENT_ENVIRONMENT_UNKNOWN",
+          "DOC_NOT_FOUND",
+          "ECF_VALIDATION_FAILED",
+          "ECF_XSD_INVALID",
+          "EMAIL_NOT_VERIFIED",
+          "EMIT_RATE_LIMIT",
+          "ENCF_ALREADY_ISSUED",
+          "ENCF_CONSUMED",
+          "ENVIRONMENT_MISMATCH",
+          "ENVIRONMENT_NOT_ALLOWED_FOR_KEY",
+          "IDEMPOTENCY_IN_FLIGHT",
+          "IDEMPOTENCY_KEY_CONFLICT",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INTEGRATION_TESTS_FAILED",
+          "INTEGRATION_TESTS_TEST_KEY_ONLY",
+          "INTERNAL_ERROR",
+          "INVALID_CURSOR",
+          "INVALID_ENCF",
+          "INVALID_ENVIRONMENT",
+          "INVALID_IDEMPOTENCY_KEY",
+          "INVALID_JSON",
+          "INVALID_REFERENCIA_EXTERNA",
+          "INVALID_SUCURSAL",
+          "NC_BALANCE_INVALID",
+          "NOT_FOUND",
+          "NOT_RECEIVED",
+          "NO_CERT",
+          "PAYLOAD_TOO_LARGE",
+          "PAYMENT_REQUIRED",
+          "PDF_GENERATION_FAILED",
+          "PUBLIC_KEY_DERIVATION_FAILED",
+          "RATE_LIMIT",
+          "REACCESS_REQUIRED",
+          "SELF_APPROVAL_FORBIDDEN",
+          "SSRF_BLOCKED",
+          "SSRF_DNS",
+          "SSRF_PROTO",
+          "STAFF_SESSION_REVOKED",
+          "STRICT_RATE_LIMIT",
+          "TENANT_INACTIVE",
+          "TENANT_NOT_FOUND",
+          "TENANT_RNC_INVALID",
+          "TOKEN_INVALID",
+          "UNAUTHORIZED",
+          "VALIDATION",
+          "WEBHOOK_TEST_FAILED",
+          "XSD_VALIDATION_FAILED",
+          "XSD_VALIDATION_POSTSIGN_FAILED"
+        ],
+        "description": "Código estable de error (`error.code`). Los mensajes pueden ser más específicos que el de la tabla; el `code` no cambia sin pasar a /v2.\n\n| Código | HTTP | Reintentable | Qué significa y qué hacer |\n|---|---|---|---|\n| `ACCOUNT_PROBE_FAILED` | 500 | sí | No se pudo leer la cuenta. Repite en unos segundos. |\n| `ACCOUNT_SUSPENDED` | 402 | no | Cuenta suspendida por saldo. Regulariza el pago. La emisión de e-CF sigue activa. |\n| `ACECF_DGII_ERROR` | 424 | sí | La DGII no aceptó la aprobación comercial. Revisa `data` (estado y mensaje de la DGII) y reenvía la misma decisión. |\n| `ACECF_ERROR` | 500 | sí | No se pudo procesar la aprobación comercial. Repite; si persiste, informa el requestId a soporte. |\n| `ACECF_PERSIST_FAILED` | 500 | sí | No se pudo guardar la aprobación comercial. Repite con la misma Idempotency-Key. |\n| `ALREADY_PROCESSED` | 409 | no | El documento ya tiene una decisión comercial. Consulta el estado actual; solo se reenvía la misma decisión si falló el envío. |\n| `ANECF_ERROR` | 500 | sí | La anulación no se pudo procesar. Revisa los rangos y repite con la misma Idempotency-Key. |\n| `ANECF_SECUENCIA_INVALIDA` | 422 | no | Rango inválido: desde es mayor que hasta. Corrige el orden del rango. |\n| `ANECF_TIPO_CRUZADO` | 422 | no | El rango mezcla tipos de e-CF. Un rango debe ser de un solo tipo. |\n| `ANECF_TIPO_MISMATCH` | 422 | no | El rango no corresponde al tipo de e-CF indicado. Alinea tipo_ecf con el prefijo de los e-NCF del rango. |\n| `ANECF_TOO_MANY_GROUPS` | 400 | no | Demasiados tipos de comprobante en una sola anulación. Divide la solicitud en varias. |\n| `ANECF_TOO_MANY_SEQUENCES` | 400 | no | Demasiados rangos en una sola anulación. Divide la solicitud en varias. |\n| `API_KEY_INVALID` | 401 | no | Clave inválida, revocada o cuenta inactiva. Revisa la clave en la sección API del portal; si fue rotada o revocada, crea una nueva. |\n| `API_KEY_MISSING` | 401 | no | Falta la clave de la API. Envía la clave en X-API-Key (o Authorization: Bearer <clave>, o ApiKey). |\n| `BAD_REQUEST` | 400 | no | Petición mal formada. Revisa el cuerpo contra el contrato. |\n| `CERTIFICATION_RECEIPT_ONLY` | 409 | no | En CerteCF solo se registra el acuse de recibo; no se envía una decisión ACECF. Continúa la prueba de certificación en el portal DGII. La aprobación comercial de producción no aplica a este ambiente. |\n| `CERT_EXPIRED` | 400 | no | El certificado digital está vencido. Sube un certificado vigente. |\n| `CERT_INCOMPLETE` | 500 | no | El certificado no trae todos los datos necesarios. Vuelve a subir el certificado .p12. |\n| `CERT_NOT_FOUND` | 400 | no | No hay certificado activo. Sube el certificado .p12 desde el portal. |\n| `CERT_PRECHECK_FAILED` | 500 | sí | No se pudo verificar el certificado. Repite con la misma Idempotency-Key. |\n| `CERT_SESSION_CLIENT_NOT_LINKED` | 403 | no | Ese RNC no es un cliente de esta cuenta de revendedor. Solo una cuenta developer puede pedir el enlace de carga de los clientes que creó o tiene vinculados. |\n| `CERT_SESSION_EMAIL_FAILED` | 502 | sí | No se pudo enviar el enlace de carga por correo al dueño del cliente. Repite la petición en unos minutos; el enlace anterior ya no sirve. |\n| `CERT_SESSION_INVALID` | 404 | no | El enlace de carga del certificado no es válido, ya se usó o venció. Pide un enlace nuevo; cada enlace sirve una sola vez y vence a los 30 minutos. |\n| `CERT_UPLOAD_NOT_ALLOWED_FOR_KEY` | 403 | no | Una credencial foecf_* no puede subir ni cambiar el certificado. El .p12 lo sube el dueño de la cuenta: pide un enlace con POST /{env}/certificados/sesion-carga y ábrelo en su navegador. |\n| `DGII_QUERY_FAILED` | 502 | sí | No se pudo consultar a la DGII. Repite más tarde; el documento sigue en tu cuenta. |\n| `DGII_SEND_ERROR` | 502 | sí | No se pudo enviar a la DGII. Repite más tarde con la misma Idempotency-Key. |\n| `DGII_TIMEOUT` | 500 | sí | La DGII no respondió a tiempo. Repite más tarde. |\n| `DGII_TOKEN_EXTRACT_FAILED` | 502 | sí | No se pudo leer el token de la DGII. Repite más tarde. |\n| `DGII_TOKEN_MISSING` | 502 | sí | La DGII no devolvió token de autenticación. Repite más tarde. |\n| `DOCUMENT_ENVIRONMENT_UNKNOWN` | 409 | no | El ambiente original del recibido requiere revisión. Revisa la evidencia del documento recibido; no lo reenvíes en otro ambiente. |\n| `DOC_NOT_FOUND` | 404 | no | Documento recibido no encontrado. Verifica encf y rnc_emisor. |\n| `ECF_VALIDATION_FAILED` | 400 | no | El documento no pasó la validación de campos. Corrige cada línea de `details.validationErrors` y repite. |\n| `ECF_XSD_INVALID` | 400 | no | El XML armado no cumple el esquema oficial de la DGII. Revisa el orden, los nombres y los decimales de los campos. |\n| `EMAIL_NOT_VERIFIED` | 403 | no | El correo de la cuenta aún no está verificado. Verifica el correo desde el portal y vuelve a intentar. |\n| `EMIT_RATE_LIMIT` | 429 | sí | Límite de emisión alcanzado (30 por minuto). Espera Retry-After y repite con la misma Idempotency-Key. |\n| `ENCF_ALREADY_ISSUED` | 409 | no | Ese e-NCF ya se emitió con otro contenido. Usa el siguiente número libre de tu rango. |\n| `ENCF_CONSUMED` | 409 | no | Ese e-NCF ya fue consumido (rechazado o anulado) y no se reutiliza. Usa el siguiente número libre de tu rango. |\n| `ENVIRONMENT_MISMATCH` | 403 | no | La cuenta no opera en el ambiente de la ruta. Corrige el ambiente de la URL al que indica `details.expected`. |\n| `ENVIRONMENT_NOT_ALLOWED_FOR_KEY` | 403 | no | La credencial no puede operar en el ambiente de la ruta. Las credenciales de pruebas (foecf_test_) solo usan /v1/TesteCF; las de producción, /v1/eCF. |\n| `IDEMPOTENCY_IN_FLIGHT` | 409 | sí | La petición previa con la misma Idempotency-Key sigue en curso. Espera unos segundos y repite la misma petición. |\n| `IDEMPOTENCY_KEY_CONFLICT` | 409 | no | Idempotency-Key reutilizada con un cuerpo distinto. Para reintentar envía exactamente el mismo cuerpo; para otra operación usa otra clave. |\n| `IDEMPOTENCY_KEY_REQUIRED` | 400 | no | Esta operación exige la cabecera Idempotency-Key con una credencial foecf_*. Agrega Idempotency-Key (8 a 128 caracteres) y reintenta; ejemplo: Idempotency-Key: venta-1042-emitir. |\n| `INTEGRATION_TESTS_FAILED` | 500 | sí | No se pudieron leer los casos de prueba. Repite en unos segundos. |\n| `INTEGRATION_TESTS_TEST_KEY_ONLY` | 403 | no | Los casos de prueba solo se consultan con una credencial de pruebas. Usa una credencial foecf_test_. |\n| `INTERNAL_ERROR` | 500 | sí | Error interno del servidor. Repite con la misma Idempotency-Key; si persiste, informa el requestId a soporte. |\n| `INVALID_CURSOR` | 400 | no | cursor no válido. Usa el next_cursor de la respuesta anterior sin modificarlo. |\n| `INVALID_ENCF` | 400 | no | e-NCF no válido. Debe ser E + 12 dígitos. |\n| `INVALID_ENVIRONMENT` | 400 | no | Ambiente no válido en la ruta. Usa TesteCF, CerteCF o eCF. |\n| `INVALID_IDEMPOTENCY_KEY` | 400 | no | Idempotency-Key debe tener 8 a 128 caracteres [A-Za-z0-9_-:.=]. Usa una clave con ese formato. |\n| `INVALID_JSON` | 400 | no | El cuerpo de la petición no es un JSON válido. Revisa que el cuerpo sea JSON bien formado (comillas, comas y llaves) y que Content-Type sea application/json. |\n| `INVALID_REFERENCIA_EXTERNA` | 400 | no | referencia_externa no es válida. Texto de hasta 100 caracteres, sin saltos de línea. |\n| `INVALID_SUCURSAL` | 400 | no | sucursal no es válida. De 3 a 10 caracteres alfanuméricos. |\n| `NC_BALANCE_INVALID` | 422 | no | La nota de crédito excede el saldo del documento que modifica. Reduce los montos de la nota. |\n| `NOT_FOUND` | 404 | no | Recurso no encontrado. Verifica el identificador y que pertenezca a esta cuenta y a este ambiente. |\n| `NOT_RECEIVED` | 409 | no | El e-CF fue acusado como No Recibido: no se puede aprobar ni rechazar. No requiere más acciones sobre este documento. |\n| `NO_CERT` | 400 | no | No hay certificado .p12 activo. Sube el certificado desde el portal antes de emitir. |\n| `PAYLOAD_TOO_LARGE` | 413 | no | El cuerpo de la petición excede el tamaño máximo permitido. Reduce el tamaño del cuerpo. |\n| `PAYMENT_REQUIRED` | 402 | no | Saldo vencido: la exportación masiva requiere regularizar el pago. Regulariza el pago o activa el re-acceso. La emisión y la consulta individual no se bloquean. |\n| `PDF_GENERATION_FAILED` | 500 | sí | No se pudo generar la representación impresa. Repite en unos segundos. |\n| `PUBLIC_KEY_DERIVATION_FAILED` | 500 | no | No se pudo derivar la llave pública del certificado. Vuelve a subir el certificado .p12. |\n| `RATE_LIMIT` | 429 | sí | Demasiadas solicitudes, intenta más tarde. Espera los segundos de la cabecera Retry-After y repite la misma petición. |\n| `REACCESS_REQUIRED` | 402 | no | Cuenta suspendida: la exportación masiva requiere regularizar el saldo. Regulariza el saldo o paga el fee de re-acceso. |\n| `SELF_APPROVAL_FORBIDDEN` | 403 | no | No se puede aprobar ni rechazar un e-CF emitido por la misma empresa. Solo se aprueban documentos recibidos de otro emisor. |\n| `SSRF_BLOCKED` | 400 | no | La URL apunta a una dirección no permitida. Usa una URL pública, no una red interna. |\n| `SSRF_DNS` | 400 | no | No se pudo resolver el host de la URL. Revisa el dominio de la URL. |\n| `SSRF_PROTO` | 400 | no | La URL del webhook debe ser http(s). Usa una URL http:// o https://. |\n| `STAFF_SESSION_REVOKED` | 401 | no | La sesión de soporte fue cerrada por el titular de la cuenta. Pide al titular que vuelva a autorizar el acceso. |\n| `STRICT_RATE_LIMIT` | 429 | sí | Límite de operaciones sensibles alcanzado. Espera Retry-After y repite. |\n| `TENANT_INACTIVE` | 403 | no | Cuenta suspendida o pendiente de activación. Contacta a soporte o completa la activación de la cuenta. |\n| `TENANT_NOT_FOUND` | 404 | no | Cuenta no encontrada. Verifica que la clave pertenezca a la cuenta correcta. |\n| `TENANT_RNC_INVALID` | 422 | no | El RNC de la cuenta no es válido para el acuse. Corrige el RNC de la cuenta en el portal. |\n| `TOKEN_INVALID` | 401 | no | Token inválido o expirado. Vuelve a autenticarte o usa una clave de API. |\n| `UNAUTHORIZED` | 401 | no | Se requiere autenticación. Envía una clave válida en X-API-Key. |\n| `VALIDATION` | 400 | no | La petición no tiene el formato esperado. Revisa el cuerpo y los parámetros contra el contrato. |\n| `WEBHOOK_TEST_FAILED` | 500 | sí | No se pudo probar el webhook. Repite; revisa que tu servidor responda. |\n| `XSD_VALIDATION_FAILED` | 422 | no | El XML no cumple el esquema oficial de la DGII. Corrige los campos indicados en `details`. |\n| `XSD_VALIDATION_POSTSIGN_FAILED` | 500 | sí | El XML firmado no cumple el esquema. Repite; si persiste, informa el requestId a soporte. |"
+      }
+    },
+    "parameters": {
+      "env": {
+        "name": "env",
+        "in": "path",
+        "required": true,
+        "description": "Ambiente DGII",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "TesteCF",
+            "CerteCF",
+            "eCF"
+          ]
+        },
+        "example": "TesteCF"
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Obligatoria con credenciales `foecf_*` (400 `IDEMPOTENCY_KEY_REQUIRED` si falta); opcional con la clave original. De 8 a 128 caracteres, única por operación, vigente 24 h. Repetir con el mismo cuerpo devuelve la misma respuesta con `Idempotent-Replayed: true`.",
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_\\-:.=]{8,128}$"
+        },
+        "example": "venta-1042-emitir"
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "description": "Verifica el estado de MySQL, Redis y el servicio",
+        "responses": {
+          "200": {
+            "description": "Servicio operativo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "status": "ok",
+                    "services": {
+                      "mysql": "ok",
+                      "redis": "ok"
+                    },
+                    "uptime": 3600,
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf": {
+      "post": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Emitir o validar un e-CF",
+        "description": "Envía un documento e-CF a la DGII. Con `?validate=true` solo valida sin enviar ni gastar secuencia.\n\n**Flujo:** JSON → XML → Firma digital → QR → Storage → Respuesta inmediata → Cola DGII en background\n\n**Idempotency-Key.** Obligatoria con las credenciales `foecf_*` (sin ella: 400 `IDEMPOTENCY_KEY_REQUIRED`); opcional con la clave original del ERP. Valor único por operación, de 8 a 128 caracteres (`A-Z a-z 0-9 _ - : . =`), válido 24 horas por cuenta y operación. Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta con la cabecera `Idempotent-Replayed: true` y no se duplica nada. Mismo valor con otro cuerpo: 409 `IDEMPOTENCY_KEY_CONFLICT`; la primera petición aún en curso: 409 `IDEMPOTENCY_IN_FLIGHT` (espera y repite). Las respuestas transitorias (5xx, 408, 429) no se guardan: puedes reintentar con la misma clave. La emisión con `?validate=true` no exige la cabecera (no emite nada).",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "validate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true"
+              ]
+            },
+            "description": "Si es \"true\", solo valida sin enviar"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "El documento e-CF. Además admite dos campos opcionales de primer nivel que NO forman parte del XML de la DGII: `referencia_externa` (el id de la venta en su sistema; hasta 100 caracteres, sin saltos de línea) y `sucursal` (3 a 10 caracteres alfanuméricos; si falta, se usa la sucursal de la credencial).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ECFPayloadE31"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "referencia_externa": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "description": "Identificador de la venta en su sistema, único por ambiente. Si se reenvía una referencia que ya existe en el ambiente, no se emite otro documento: la respuesta es 200 con el documento existente y `duplicado_por_referencia: true`. Un documento rechazado o con error libera su referencia para poder reemitir la venta.",
+                        "example": "PED-2026-000123"
+                      },
+                      "sucursal": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 10,
+                        "pattern": "^[A-Za-z0-9]{3,10}$",
+                        "description": "Sucursal que emite (3 a 10 alfanuméricos). Por defecto, la sucursal de la credencial.",
+                        "example": "001"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validación exitosa (con ?validate=true), o referencia ya emitida: devuelve el documento existente con `duplicate: true` y `duplicado_por_referencia: true` sin emitir otro",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "validacion": {
+                    "summary": "Validación",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "valid": true
+                      }
+                    }
+                  },
+                  "duplicado": {
+                    "summary": "Referencia ya existente en el ambiente",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "internalTrackId": "3f8b1c2e-0000-4000-8000-000000000000",
+                        "encf": "E310000000001",
+                        "estado": "aceptado",
+                        "duplicate": true,
+                        "duplicado_por_referencia": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Documento procesado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ECFEmitResponse"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error de validación. Códigos propios de este lote: `INVALID_REFERENCIA_EXTERNA` (más de 100 caracteres, con saltos de línea o no es texto) e `INVALID_SUCURSAL` (no son 3 a 10 alfanuméricos). Con una credencial `foecf_*`: `IDEMPOTENCY_KEY_REQUIRED` (falta Idempotency-Key) o `INVALID_IDEMPOTENCY_KEY` (formato)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "ECF_VALIDATION_FAILED",
+                    "message": "Validación fallida",
+                    "details": {
+                      "validationErrors": [
+                        "Campo obligatorio faltante"
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_CONFLICT` (misma clave con otro cuerpo) o `IDEMPOTENCY_IN_FLIGHT` (la primera petición sigue en curso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite mensual alcanzado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Listar documentos o consultar por eNCF o trackId",
+        "description": "Con `ecf` o `trackId` devuelve un documento. Sin ellos lista los documentos del ambiente. La lista admite paginación por página (`page`, `pageSize`) o por cursor: al mandar `cursor` (vacío para la primera página) la respuesta trae `pagination { limit, has_more, next_cursor }` y el orden es estable aunque entren documentos nuevos. TesteCF y CerteCF se consultan juntos; eCF siempre aislado.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "ecf",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "eNCF del documento (ej: E310000000001)"
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Track ID de la DGII"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor opaco. Vacío = primera página; luego use el `next_cursor` de la respuesta anterior sin modificarlo."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 20
+            },
+            "description": "Documentos por página en la paginación por cursor (tope 200)."
+          },
+          {
+            "name": "sucursal",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 10
+            },
+            "description": "Filtra por sucursal (3 a 10 alfanuméricos)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento encontrado o lista. Con `cursor`: `{ success, data: [...], pagination: { limit, has_more, next_cursor } }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ECFDocument"
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "has_more": {
+                          "type": "boolean"
+                        },
+                        "next_cursor": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`INVALID_CURSOR` (cursor manipulado) o `INVALID_SUCURSAL`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/por-encf/{encf}": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Consultar documento por e-NCF",
+        "description": "Busca por e-NCF en el alcance del ambiente (TesteCF y CerteCF juntos; eCF aislado). Solo lectura.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "encf",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^E[0-9]{12}$"
+            },
+            "description": "e-NCF: E más 12 dígitos (ej: E310000000001)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ECFDocument"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`INVALID_ENCF`: no tiene forma de e-NCF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/por-referencia/{ref}": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Consultar documento por referencia_externa",
+        "description": "Busca por la `referencia_externa` que se mandó al emitir, en el alcance del ambiente. Solo lectura.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "La referencia_externa (codificada para URL)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ECFDocument"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`INVALID_REFERENCIA_EXTERNA`: vacía, de más de 100 caracteres o con saltos de línea",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/{internalTrackId}": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Consultar documento por ID interno",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "internalTrackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento encontrado"
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/{internalTrackId}/xml": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Descargar XML firmado",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "internalTrackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "XML firmado",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "404": {
+            "description": "XML no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/{internalTrackId}/rfce": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Descargar RFCE (solo E32 < 250K)",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "internalTrackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RFCE XML",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "404": {
+            "description": "RFCE no disponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/{internalTrackId}/pdf": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Descargar representación impresa (PDF/RI)",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "internalTrackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "404": {
+            "description": "Documento no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/anulacion-ecf": {
+      "post": {
+        "tags": [
+          "Anulación"
+        ],
+        "summary": "Anular secuencias eNCF",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rangos"
+                ],
+                "properties": {
+                  "rangos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "desde": {
+                          "type": "string",
+                          "example": "E310000000100"
+                        },
+                        "hasta": {
+                          "type": "string",
+                          "example": "E310000000110"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "rangos": [
+                  {
+                    "desde": "E310000000100",
+                    "hasta": "E310000000110"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anulación enviada a DGII",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validación fallida. Con una credencial `foecf_*`: `IDEMPOTENCY_KEY_REQUIRED` (falta Idempotency-Key) o `INVALID_IDEMPOTENCY_KEY` (formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_CONFLICT` (misma clave con otro cuerpo) o `IDEMPOTENCY_IN_FLIGHT` (la primera petición sigue en curso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "\n\n**Idempotency-Key.** Obligatoria con las credenciales `foecf_*` (sin ella: 400 `IDEMPOTENCY_KEY_REQUIRED`); opcional con la clave original del ERP. Valor único por operación, de 8 a 128 caracteres (`A-Z a-z 0-9 _ - : . =`), válido 24 horas por cuenta y operación. Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta con la cabecera `Idempotent-Replayed: true` y no se duplica nada. Mismo valor con otro cuerpo: 409 `IDEMPOTENCY_KEY_CONFLICT`; la primera petición aún en curso: 409 `IDEMPOTENCY_IN_FLIGHT` (espera y repite). Las respuestas transitorias (5xx, 408, 429) no se guardan: puedes reintentar con la misma clave."
+      }
+    },
+    "/api/verify-rnc": {
+      "post": {
+        "tags": [
+          "Verificación"
+        ],
+        "summary": "Validar RNC contra directorio DGII (pre-registro)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rnc"
+                ],
+                "properties": {
+                  "rnc": {
+                    "type": "string",
+                    "example": "130000001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RNC válido + razón social",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "rnc": "130000001",
+                    "name": "EMPRESA EJEMPLO SRL",
+                    "status": "ACTIVO"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RNC no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/directorio/{rnc}": {
+      "get": {
+        "tags": [
+          "Directorio"
+        ],
+        "summary": "Consultar directorio DGII por RNC",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "rnc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "130000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información del contribuyente"
+          },
+          "400": {
+            "description": "RNC inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos": {
+      "get": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Listar e-CF recibidos",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de documentos recibidos"
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos/{id}": {
+      "get": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Detalle de un e-CF recibido",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID del documento recibido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento recibido"
+          },
+          "400": {
+            "description": "ID inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos/{id}/xml": {
+      "get": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Descargar el XML de un e-CF recibido",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID del documento recibido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "XML recibido",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos/{id}/arecf": {
+      "get": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Descargar el acuse de recibo (ARECF) de un e-CF recibido",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID del documento recibido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "XML del acuse de recibo",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos/{id}/approve": {
+      "post": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Aprobar comercialmente un e-CF recibido",
+        "description": "Envía la aprobación comercial a la DGII. No se puede aprobar un documento emitido por el mismo RNC (403 `SELF_APPROVAL_FORBIDDEN`).\n\n**Idempotency-Key.** Obligatoria con las credenciales `foecf_*` (sin ella: 400 `IDEMPOTENCY_KEY_REQUIRED`); opcional con la clave original del ERP. Valor único por operación, de 8 a 128 caracteres (`A-Z a-z 0-9 _ - : . =`), válido 24 horas por cuenta y operación. Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta con la cabecera `Idempotent-Replayed: true` y no se duplica nada. Mismo valor con otro cuerpo: 409 `IDEMPOTENCY_KEY_CONFLICT`; la primera petición aún en curso: 409 `IDEMPOTENCY_IN_FLIGHT` (espera y repite). Las respuestas transitorias (5xx, 408, 429) no se guardan: puedes reintentar con la misma clave. El ámbito incluye el {id}: la misma clave sobre otro documento es otra operación.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID del documento recibido"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aprobación enviada",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ID inválido. Con una credencial `foecf_*`: `IDEMPOTENCY_KEY_REQUIRED` (falta Idempotency-Key) o `INVALID_IDEMPOTENCY_KEY` (formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SELF_APPROVAL_FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_CONFLICT` (misma clave con otro cuerpo) o `IDEMPOTENCY_IN_FLIGHT` (la primera petición sigue en curso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-recibidos/{id}/reject": {
+      "post": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Rechazar comercialmente un e-CF recibido",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID del documento recibido"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "description": "Motivo del rechazo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rechazo enviado",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ID inválido o falta `reason`. Con una credencial `foecf_*`: `IDEMPOTENCY_KEY_REQUIRED` (falta Idempotency-Key) o `INVALID_IDEMPOTENCY_KEY` (formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SELF_APPROVAL_FORBIDDEN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_CONFLICT` (misma clave con otro cuerpo) o `IDEMPOTENCY_IN_FLIGHT` (la primera petición sigue en curso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "\n\n**Idempotency-Key.** Obligatoria con las credenciales `foecf_*` (sin ella: 400 `IDEMPOTENCY_KEY_REQUIRED`); opcional con la clave original del ERP. Valor único por operación, de 8 a 128 caracteres (`A-Z a-z 0-9 _ - : . =`), válido 24 horas por cuenta y operación. Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta con la cabecera `Idempotent-Replayed: true` y no se duplica nada. Mismo valor con otro cuerpo: 409 `IDEMPOTENCY_KEY_CONFLICT`; la primera petición aún en curso: 409 `IDEMPOTENCY_IN_FLIGHT` (espera y repite). Las respuestas transitorias (5xx, 408, 429) no se guardan: puedes reintentar con la misma clave. El ámbito incluye el {id}: la misma clave sobre otro documento es otra operación."
+      }
+    },
+    "/{env}/aprobacion-comercial": {
+      "post": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Aprobar o rechazar e-CF recibido",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "encf",
+                  "rnc_emisor",
+                  "estado"
+                ],
+                "properties": {
+                  "encf": {
+                    "type": "string",
+                    "example": "E310000000001"
+                  },
+                  "rnc_emisor": {
+                    "type": "string",
+                    "example": "130000001"
+                  },
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "aprobado",
+                      "rechazado"
+                    ]
+                  },
+                  "motivo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aprobación enviada a DGII",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Solo en una repetición: `true` = respuesta guardada de la primera petición con esa Idempotency-Key.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Con una credencial `foecf_*`: `IDEMPOTENCY_KEY_REQUIRED` (falta Idempotency-Key) o `INVALID_IDEMPOTENCY_KEY` (formato)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento recibido no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`IDEMPOTENCY_KEY_CONFLICT` (misma clave con otro cuerpo) o `IDEMPOTENCY_IN_FLIGHT` (la primera petición sigue en curso)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "\n\n**Idempotency-Key.** Obligatoria con las credenciales `foecf_*` (sin ella: 400 `IDEMPOTENCY_KEY_REQUIRED`); opcional con la clave original del ERP. Valor único por operación, de 8 a 128 caracteres (`A-Z a-z 0-9 _ - : . =`), válido 24 horas por cuenta y operación. Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta con la cabecera `Idempotent-Replayed: true` y no se duplica nada. Mismo valor con otro cuerpo: 409 `IDEMPOTENCY_KEY_CONFLICT`; la primera petición aún en curso: 409 `IDEMPOTENCY_IN_FLIGHT` (espera y repite). Las respuestas transitorias (5xx, 408, 429) no se guardan: puedes reintentar con la misma clave."
+      }
+    },
+    "/{env}/aprobaciones-comerciales": {
+      "get": {
+        "tags": [
+          "Recepción"
+        ],
+        "summary": "Historial de aprobaciones comerciales enviadas",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de aprobaciones"
+          }
+        }
+      }
+    },
+    "/{env}/certificados/sesion-carga": {
+      "post": {
+        "tags": [
+          "Certificados"
+        ],
+        "summary": "Generar el enlace para que el dueño suba el certificado",
+        "description": "El certificado .p12 nunca pasa por un integrador ni por un revendedor: una credencial foecf_* no puede subirlo (la subida directa responde 403 CERT_UPLOAD_NOT_ALLOWED_FOR_KEY). En su lugar, esta operación crea un enlace de UN solo uso, que vence a los 30 minutos y queda ligado a la cuenta; la respuesta trae \"url\" (ábrela en el navegador del dueño: pide el archivo .p12 y su contraseña y lo sube. El certificado tributario identifica a la persona firmante; su cédula no tiene que coincidir con el RNC empresarial. La autorización de esa persona para firmar por el contribuyente se gestiona ante la DGII) y \"vence\". Si quien llama es un revendedor (credencial developer) y manda en el cuerpo el \"rnc\" de uno de sus clientes, el enlace NO se devuelve: se envía por correo al dueño del cliente y la respuesta trae solo { enviado: true, a: <correo enmascarado> }.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rnc": {
+                    "type": "string",
+                    "description": "Solo revendedores: RNC del cliente (debe estar vinculado a la cuenta developer). Sin este campo, el enlace es de la cuenta que llama.",
+                    "example": "132354664"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Enlace creado (cuenta propia) o enviado por correo (revendedor)",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "cuentaPropia": {
+                    "summary": "Cuenta propia",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "url": "https://ecf.frandeone.com/certificado/cargar/<token>",
+                        "vence": "2026-10-08T12:30:00.000Z"
+                      },
+                      "requestId": "req-1"
+                    }
+                  },
+                  "revendedor": {
+                    "summary": "Revendedor sobre un cliente",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "enviado": true,
+                        "a": "ma***@g***.com"
+                      },
+                      "requestId": "req-2"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente o inválida (API_KEY_MISSING, API_KEY_INVALID)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CERT_SESSION_CLIENT_NOT_LINKED: ese RNC no es un cliente de la cuenta de revendedor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "STRICT_RATE_LIMIT: límite de operaciones sensibles (10 por minuto)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CERT_SESSION_EMAIL_FAILED: no se pudo enviar el correo al dueño del cliente; el enlace no sirve",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/certificates/info": {
+      "get": {
+        "tags": [
+          "Certificados"
+        ],
+        "summary": "Info del certificado activo",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información del certificado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CertificateInfo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sin certificado activo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/key": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Obtener datos del tenant usando API Key (máquina-a-máquina)",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil del tenant"
+          }
+        }
+      }
+    },
+    "/api/webhooks/test": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Enviar evento `webhook.test` al endpoint configurado",
+        "description": "Webhook original de la cuenta: envía un POST firmado con HMAC-SHA256 al webhook_url del tenant (o al `url` opcional del body). Sin reintentos (single-shot para debugging). Los destinos por ambiente se prueban desde el portal (Credenciales de API → Enviar prueba).",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL alternativa; si se omite, usa tenants.webhook_url"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "deliveryId": 7,
+                    "status": "success",
+                    "httpStatus": 200,
+                    "durationMs": 142,
+                    "attempt": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Sin webhook_url o URL inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/deliveries": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Historial de deliveries (paginado)",
+        "description": "Lista los últimos envíos de webhook con estado, HTTP status, duración y reintentos.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "success",
+                "failed",
+                "abandoned"
+              ]
+            }
+          },
+          {
+            "name": "event",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada"
+          }
+        }
+      }
+    },
+    "/api/webhooks/deliveries/{id}": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Detalle de un delivery (incluye payload + response body)",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "No encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/webhooks": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Destinos de webhook del ambiente de la credencial",
+        "description": "Solo lectura. Lista los destinos de ese ambiente (TesteCF y CerteCF = pruebas; eCF = producción) con sus eventos, estado de firma y último resultado. Nunca devuelve el secreto: se muestra una sola vez al crearlo o rotarlo en el portal. Se crean, editan, pausan y eliminan en el portal. Una credencial `foecf_dev_` no consulta webhooks.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destinos del ambiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ambiente": {
+                          "type": "string",
+                          "enum": [
+                            "prueba",
+                            "produccion"
+                          ]
+                        },
+                        "destinos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "ambiente": {
+                                "type": "string",
+                                "enum": [
+                                  "prueba",
+                                  "produccion"
+                                ]
+                              },
+                              "ambiente_nombre": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri"
+                              },
+                              "etiqueta": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "eventos": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "example": [
+                                  "ecf.status_update",
+                                  "ecf.accepted"
+                                ]
+                              },
+                              "activo": {
+                                "type": "boolean"
+                              },
+                              "firmado": {
+                                "type": "boolean",
+                                "description": "false solo en el destino migrado del webhook original que aún no tiene secreto: se envía sin firma hasta que se genere uno."
+                              },
+                              "secreto_pendiente": {
+                                "type": "boolean"
+                              },
+                              "origen": {
+                                "type": "string",
+                                "enum": [
+                                  "migrado",
+                                  "portal"
+                                ]
+                              },
+                              "creado": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "ultimo_envio": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              },
+                              "ultimo_resultado": {
+                                "type": "string",
+                                "enum": [
+                                  "success",
+                                  "failed",
+                                  "abandoned"
+                                ],
+                                "nullable": true
+                              },
+                              "ultimo_http": {
+                                "type": "integer",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave o es inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La credencial no corresponde a ese ambiente o es de integrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/webhooks/entregas": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Entregas de webhook del ambiente de la credencial",
+        "description": "Solo lectura, de la más reciente a la más antigua. Cada entrega indica el destino, el evento, el resultado (pending, success, failed, abandoned), el código HTTP de tu sistema y el intento. No incluye el cuerpo enviado ni la respuesta. El reenvío se hace desde el portal.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "success",
+                "failed",
+                "abandoned"
+              ]
+            }
+          },
+          {
+            "name": "evento",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ecf.accepted"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de entregas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "destino_id": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "ambiente": {
+                            "type": "string",
+                            "enum": [
+                              "prueba",
+                              "produccion"
+                            ]
+                          },
+                          "evento": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "estado": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "success",
+                              "failed",
+                              "abandoned"
+                            ]
+                          },
+                          "http": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "duracion_ms": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "intento": {
+                            "type": "integer"
+                          },
+                          "intentos_max": {
+                            "type": "integer"
+                          },
+                          "error": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "reenvio_de": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "creada": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave o es inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La credencial no corresponde a ese ambiente o es de integrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/batch-status": {
+      "post": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Consulta batch de estado DGII para múltiples trackIds",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "env",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "TesteCF",
+                "CerteCF",
+                "eCF"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "internalTrackIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapa trackId → estado"
+          }
+        }
+      }
+    },
+    "/{env}/documentos-ecf/{internalTrackId}/status": {
+      "get": {
+        "tags": [
+          "Emisión e-CF"
+        ],
+        "summary": "Consulta en vivo del estado DGII (statusTrackId)",
+        "description": "Hace una llamada síncrona al endpoint DGII para obtener el estado actual. Actualiza el documento en BD.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "env",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "internalTrackId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado DGII"
+          }
+        }
+      }
+    },
+    "/{env}/certificates/test-auth": {
+      "post": {
+        "tags": [
+          "Certificados"
+        ],
+        "summary": "Probar autenticación DGII con el .p12 activo",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "env",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token DGII obtenido"
+          },
+          "401": {
+            "description": "Auth DGII falló",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/anulaciones": {
+      "get": {
+        "tags": [
+          "Anulación"
+        ],
+        "summary": "Listar anulaciones del ambiente",
+        "description": "Solo las anulaciones (ANECF) del ambiente de la ruta; una credencial de pruebas nunca ve las de eCF. La ruta `/anulaciones` sin ambiente es un alias que usa el ambiente de la credencial.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de anulaciones"
+          },
+          "401": {
+            "description": "Falta la clave o es inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/anulaciones/{id}": {
+      "get": {
+        "tags": [
+          "Anulación"
+        ],
+        "summary": "Detalle de una anulación del ambiente",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anulación con `anulaciones_json` y la respuesta de la DGII"
+          },
+          "404": {
+            "description": "No encontrada en ese ambiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/cuenta": {
+      "get": {
+        "tags": [
+          "Cuenta"
+        ],
+        "summary": "Probar conexión: quién soy y con qué ambiente",
+        "description": "Solo lectura, nunca emite. Con una credencial válida devuelve el RNC, el nombre, el ambiente efectivo, la credencial usada (prefijo, ambiente, sucursal), el estado del certificado y el consumo del plan.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credencial válida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "conectado": true,
+                    "rnc": "130000001",
+                    "nombre": "Empresa Ejemplo SRL",
+                    "ambiente_efectivo": "TesteCF",
+                    "credencial": {
+                      "prefijo": "foecf_test_",
+                      "ambiente": "prueba",
+                      "etiqueta": "Sistema de facturación",
+                      "sucursal": "001"
+                    },
+                    "certificado": {
+                      "cargado": false
+                    },
+                    "plan": {
+                      "nombre": "Standard",
+                      "documentos_mes": 0,
+                      "limite_mes": 50
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave o es inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "La clave no corresponde a ese ambiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{env}/pruebas-integracion": {
+      "get": {
+        "tags": [
+          "Cuenta"
+        ],
+        "summary": "Casos de prueba de integración del sandbox",
+        "description": "Progreso de los 12 casos de prueba (8 obligatorios) detectados con la credencial de pruebas (`foecf_test_`). Solo se consulta con esa credencial; con otra responde 403 `INTEGRATION_TESTS_TEST_KEY_ONLY`. Solo lectura.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyBearer": []
+          },
+          {
+            "ApiKeyAuthorization": []
+          },
+          {
+            "ApiKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/env"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Casos con su estado (ok, fallo, parcial, pendiente) y `listo_para_produccion`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta la clave o es inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No es una credencial de pruebas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
