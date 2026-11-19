@@ -1,6 +1,6 @@
 {
   "name": "@frandeone/ecf",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SDK de Frande ECF: facturación electrónica (e-CF) DGII República Dominicana",
   "license": "MIT",
   "type": "module",
