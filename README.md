@@ -271,6 +271,7 @@ Guía de cada uno: [sdk/typescript](sdk/typescript) · [sdk/php](sdk/php).
 
 - **Dudas o fallos de integración:** abre un [issue](https://github.com/franklindemanchedelizon/Integracion_Frande-ECF/issues/new/choose) (nunca pegues tu credencial ni datos de clientes).
 - **Problemas de seguridad:** escribe a soporte@frandeone.com, no en un issue público. Ver [SECURITY.md](SECURITY.md).
+- **Registro de cambios:** [CHANGELOG.md](CHANGELOG.md)
 - **Soporte directo:** soporte@frandeone.com · 809-765-3566 (teléfono y WhatsApp) · https://ecf.frandeone.com
 - Incluye siempre el `requestId` de la respuesta.
 
