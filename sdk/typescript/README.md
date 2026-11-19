@@ -2,7 +2,9 @@
 
 Node 18+ (usa `fetch` nativo), sin dependencias en tiempo de ejecución.
 
-> La publicación en npm (`@frandeone/ecf`) llega pronto. Mientras tanto, copia `src/index.ts` a tu proyecto: no tiene dependencias.
+```bash
+npm install @frandeone/ecf
+```
 
 ```ts
 import { FrandeEcf, FrandeEcfError, verificarWebhook } from '@frandeone/ecf';

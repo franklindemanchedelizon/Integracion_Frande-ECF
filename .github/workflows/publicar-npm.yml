@@ -1,0 +1,40 @@
+name: Publicar en npm
+
+# Cada etiqueta vX.Y.Z publica @frandeone/ecf en npm con "trusted publishing" (OIDC):
+# sin llaves guardadas ni doble factor. Requiere configurar este repositorio y este
+# archivo como Trusted Publisher en la página del paquete en npmjs.com.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/typescript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm test
+      - name: La etiqueta coincide con la versión del paquete
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: ¿Ya está publicada esta versión?
+        id: ya
+        run: |
+          if npm view "@frandeone/ecf@$(node -p "require('./package.json').version")" version >/dev/null 2>&1; then
+            echo "publicada=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "publicada=no" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ya.outputs.publicada == 'no'
+        run: npm publish --access public --provenance

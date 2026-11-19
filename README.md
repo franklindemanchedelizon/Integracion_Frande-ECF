@@ -2,8 +2,8 @@
 
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-25A1FB)](LICENSE)
 [![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0-0F0D3F)](openapi/frande-ecf-v1.openapi.json)
-[![npm @frandeone/ecf: próximamente](https://img.shields.io/badge/npm-pr%C3%B3ximamente-25A1FB)](sdk/typescript)
-[![Packagist frandeone/ecf-sdk](https://img.shields.io/badge/packagist-frandeone%2Fecf--sdk-0F0D3F)](sdk/php)
+[![npm @frandeone/ecf](https://img.shields.io/npm/v/@frandeone/ecf?color=25A1FB&label=npm%20%40frandeone%2Fecf)](https://www.npmjs.com/package/@frandeone/ecf)
+[![Packagist frandeone/ecf-sdk](https://img.shields.io/packagist/v/frandeone/ecf-sdk?color=0F0D3F&label=packagist%20frandeone%2Fecf-sdk)](https://packagist.org/packages/frandeone/ecf-sdk)
 
 Este repositorio es la guía de integración de **Frande ECF**, la facturación electrónica (e-CF) de Frande One para la DGII de República Dominicana. Aquí aprendes a conectar tu sistema, qué enviar, qué te responde, cómo recibir cada estado y cada aviso, y qué librerías puedes agregar a tu proyecto para llamar a la API con menos código.
 
@@ -203,7 +203,7 @@ La API es HTTP y JSON: funciona desde cualquier lenguaje.
 
 | Lenguaje | Cómo |
 |---|---|
-| TypeScript / JavaScript (Node 18+) | SDK [`@frandeone/ecf`](sdk/typescript) (en npm próximamente; hoy se copia `sdk/typescript/src/index.ts`) |
+| TypeScript / JavaScript (Node 18+) | SDK [`@frandeone/ecf`](sdk/typescript) |
 | PHP 8.1+ | SDK [`frandeone/ecf-sdk`](sdk/php) |
 | Python, C# / .NET | Ejemplos en cada página de la [guía](guia/README.md) |
 | Java, Kotlin, Swift, Go, C++, Delphi, Ruby… | Genera un cliente desde el contrato OpenAPI (abajo) o usa los ejemplos con `curl` |
@@ -222,8 +222,8 @@ npx @openapitools/openapi-generator-cli generate \
 Opcionales: llaman a la misma API, con la autenticación, la idempotencia, los errores con su código y la verificación de webhooks ya resueltos.
 
 ```bash
-composer require frandeone/ecf-sdk      # PHP, ya disponible
-# TypeScript: en npm próximamente; mientras tanto copia sdk/typescript/src/index.ts a tu proyecto
+npm install @frandeone/ecf        # TypeScript / Node 18+
+composer require frandeone/ecf-sdk  # PHP 8.1+
 ```
 
 ```ts
