@@ -1,0 +1,18 @@
+flowchart LR
+  subgraph A["EMPRESA CON SU PROPIO SISTEMA"]
+    direction TB
+    E1["Tu empresa<br/>cuenta · certificado<br/>credenciales"] --> S1["Tu sistema"] --> F1(["Frande ECF"])
+  end
+  subgraph B["INTEGRADOR O DESARROLLADOR"]
+    direction TB
+    D["Cuenta de integrador<br/>clientes · cupo"]
+    C1["Cliente 1<br/>su cuenta y certificado"]
+    C2["Cliente 2<br/>su cuenta y certificado"]
+    SW["Tu software<br/>una credencial por cliente"]
+    F2(["Frande ECF"])
+    D -. administra .-> C1
+    D -. administra .-> C2
+    C1 --> SW
+    C2 --> SW
+    SW --> F2
+  end

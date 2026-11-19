@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant F as Frande ECF
+  participant W as Tu endpoint
+  F->>W: POST · X-ECF-Signature · Timestamp · Nonce · Event
+  W->>W: ¿menos de 5 min? ¿nonce nuevo? ¿firma igual?
+  alt firma válida
+    W-->>F: 200 en el acto
+    W->>W: procesa después
+  else firma inválida
+    W-->>F: 401
+  end
+  Note over F,W: sin 2xx: reintentos a 1 · 5 · 30 · 120 · 720 min

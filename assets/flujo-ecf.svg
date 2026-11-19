@@ -1,75 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="960" height="300" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 340" width="960" height="340" role="img" aria-labelledby="t d">
   <title id="t">Flujo de un e-CF con Frande ECF</title>
-  <desc id="d">Tu sistema envía el JSON a Frande ECF, que valida, firma y genera el QR, responde de inmediato, lo envía a la DGII y te avisa el resultado por webhook.</desc>
+  <desc id="d">1: tu sistema envía el JSON a Frande ECF. 2: Frande ECF valida, firma, genera el código y el QR y responde en el acto. 3: lo envía a la DGII. 4: te avisa el resultado por webhook.</desc>
+  <style>
+    .t { font-family: 'IBM Plex Sans', 'Segoe UI', Inter, Roboto, Helvetica, Arial, sans-serif; }
+    .h { fill: #FFFFFF; font-weight: 700; }
+    .s { fill: #9FD4FF; }
+    .lbl { fill: #E6F3FF; font-weight: 600; }
+    .num { fill: #0F0D3F; font-weight: 700; }
+    @media (prefers-reduced-motion: reduce) { .mov { display: none; } }
+  </style>
   <defs>
     <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0F0D3F"/>
-      <stop offset="1" stop-color="#1a1760"/>
+      <stop offset="1" stop-color="#1A1760"/>
     </linearGradient>
     <linearGradient id="caja" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1d1a5c"/>
-      <stop offset="1" stop-color="#15124a"/>
+      <stop offset="0" stop-color="#211E68"/>
+      <stop offset="1" stop-color="#16134D"/>
     </linearGradient>
-    <filter id="brillo" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="brillo" x="-60%" y="-60%" width="220%" height="220%">
       <feGaussianBlur stdDeviation="4" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#25A1FB"/>
     </marker>
-    <path id="ida1" d="M220,120 L370,120"/>
-    <path id="ida2" d="M590,120 L740,120"/>
-    <path id="vuelta" d="M480,170 C480,250 110,250 110,170"/>
-    <path id="resp" d="M370,140 L220,140"/>
+    <path id="ida1" d="M232,120 L360,120"/>
+    <path id="resp" d="M360,150 L232,150"/>
+    <path id="ida2" d="M600,135 L728,135"/>
+    <path id="vuelta" d="M480,205 C480,292 126,292 126,205"/>
   </defs>
 
-  <rect width="960" height="300" rx="18" fill="url(#fondo)"/>
+  <rect width="960" height="340" rx="20" fill="url(#fondo)"/>
 
-  <g font-family="Segoe UI, Inter, Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">
+  <g class="t" text-anchor="middle">
     <!-- Tu sistema -->
-    <rect x="20" y="70" width="200" height="100" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55"/>
-    <text x="120" y="112" fill="#ffffff" font-size="18" font-weight="600">Tu sistema</text>
-    <text x="120" y="136" fill="#9fd4ff" font-size="12">ERP · POS · tienda · app</text>
+    <rect x="20" y="70" width="212" height="135" rx="16" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55" stroke-width="1.5"/>
+    <g transform="translate(126,104)" fill="none" stroke="#25A1FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-14,-10 L-22,0 L-14,10 M14,-10 L22,0 L14,10 M5,-14 L-5,14"/>
+    </g>
+    <text x="126" y="150" class="h" font-size="22">Tu sistema</text>
+    <text x="126" y="178" class="s" font-size="15">ERP · POS · tienda · app</text>
 
     <!-- Frande ECF -->
-    <rect x="370" y="55" width="220" height="130" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-width="2"/>
-    <text x="480" y="92" fill="#ffffff" font-size="19" font-weight="700">Frande ECF</text>
-    <text x="480" y="116" fill="#9fd4ff" font-size="12">valida · firma · QR</text>
-    <text x="480" y="134" fill="#9fd4ff" font-size="12">cola y reintentos</text>
-    <text x="480" y="152" fill="#9fd4ff" font-size="12">webhooks firmados</text>
+    <rect x="360" y="55" width="240" height="150" rx="16" fill="url(#caja)" stroke="#25A1FB" stroke-width="2.5"/>
+    <g transform="translate(480,90)" fill="none" stroke="#25A1FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0,-16 L13,-10 L13,1 C13,9 7,14 0,17 C-7,14 -13,9 -13,1 L-13,-10 Z"/>
+      <path d="M-5,0 L-1,4 L6,-4"/>
+    </g>
+    <text x="480" y="134" class="h" font-size="23">Frande ECF</text>
+    <text x="480" y="160" class="s" font-size="15">valida · firma · código · QR</text>
+    <text x="480" y="182" class="s" font-size="15">cola, reintentos y avisos</text>
 
     <!-- DGII -->
-    <rect x="740" y="70" width="200" height="100" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55"/>
-    <text x="840" y="112" fill="#ffffff" font-size="18" font-weight="600">DGII</text>
-    <text x="840" y="136" fill="#9fd4ff" font-size="12">TesteCF · eCF</text>
+    <rect x="728" y="70" width="212" height="135" rx="16" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55" stroke-width="1.5"/>
+    <g transform="translate(834,104)" fill="none" stroke="#25A1FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-18,-6 L0,-16 L18,-6 Z M-14,-2 L-14,12 M-5,-2 L-5,12 M5,-2 L5,12 M14,-2 L14,12 M-20,15 L20,15"/>
+    </g>
+    <text x="834" y="150" class="h" font-size="22">DGII</text>
+    <text x="834" y="178" class="s" font-size="15">TesteCF · eCF</text>
 
     <!-- líneas -->
-    <use href="#ida1" stroke="#25A1FB" stroke-width="2" fill="none" marker-end="url(#flecha)"/>
-    <use href="#ida2" stroke="#25A1FB" stroke-width="2" fill="none" marker-end="url(#flecha)"/>
-    <use href="#resp" stroke="#25A1FB" stroke-opacity=".5" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#flecha)"/>
-    <use href="#vuelta" stroke="#25A1FB" stroke-opacity=".6" stroke-width="2" stroke-dasharray="6 6" fill="none" marker-end="url(#flecha)"/>
+    <use href="#ida1" stroke="#25A1FB" stroke-width="2.5" fill="none" marker-end="url(#flecha)"/>
+    <use href="#resp" stroke="#25A1FB" stroke-opacity=".6" stroke-width="2" stroke-dasharray="6 6" fill="none" marker-end="url(#flecha)"/>
+    <use href="#ida2" stroke="#25A1FB" stroke-width="2.5" fill="none" marker-end="url(#flecha)"/>
+    <use href="#vuelta" stroke="#25A1FB" stroke-opacity=".7" stroke-width="2" stroke-dasharray="7 7" fill="none" marker-end="url(#flecha)"/>
 
-    <text x="295" y="108" fill="#ffffff" font-size="12">1 · JSON</text>
-    <text x="295" y="160" fill="#9fd4ff" font-size="11">2 · 201: e-NCF, código, QR</text>
-    <text x="665" y="108" fill="#ffffff" font-size="12">3 · envío</text>
-    <text x="295" y="270" fill="#9fd4ff" font-size="12">4 · webhook: aceptado · condicional · rechazado</text>
+    <!-- pasos -->
+    <circle cx="296" cy="98" r="12" fill="#25A1FB"/><text x="296" y="103" class="num" font-size="14">1</text>
+    <text x="296" y="78" class="lbl" font-size="15">JSON</text>
+    <circle cx="296" cy="172" r="12" fill="#25A1FB"/><text x="296" y="177" class="num" font-size="14">2</text>
+    <text x="296" y="204" class="lbl" font-size="15">201 · QR</text>
+    <circle cx="664" cy="113" r="12" fill="#25A1FB"/><text x="664" y="118" class="num" font-size="14">3</text>
+    <text x="664" y="93" class="lbl" font-size="15">envío</text>
+    <circle cx="303" cy="270" r="12" fill="#25A1FB"/><text x="303" y="275" class="num" font-size="14">4</text>
+    <text x="303" y="314" class="lbl" font-size="15">webhook: aceptado · condicional · rechazado</text>
 
-    <!-- paquetes en movimiento -->
-    <circle r="6" fill="#25A1FB" filter="url(#brillo)">
-      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.25;1" calcMode="linear"><mpath href="#ida1"/></animateMotion>
-      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.25;0.26;1" dur="4s" repeatCount="indefinite"/>
-    </circle>
-    <circle r="5" fill="#9fd4ff" filter="url(#brillo)">
-      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.3;0.45;1" calcMode="linear"><mpath href="#resp"/></animateMotion>
-      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.29;0.3;0.45;0.46;1" dur="4s" repeatCount="indefinite"/>
-    </circle>
-    <circle r="6" fill="#25A1FB" filter="url(#brillo)">
-      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.45;0.65;1" calcMode="linear"><mpath href="#ida2"/></animateMotion>
-      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.44;0.45;0.65;0.66;1" dur="4s" repeatCount="indefinite"/>
-    </circle>
-    <circle r="6" fill="#ffffff" filter="url(#brillo)">
-      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.7;0.98;1" calcMode="linear"><mpath href="#vuelta"/></animateMotion>
-      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.69;0.7;0.98;1" dur="4s" repeatCount="indefinite"/>
-    </circle>
+    <!-- paquetes en movimiento (ocultos con movimiento reducido) -->
+    <g class="mov">
+      <circle r="7" fill="#25A1FB" filter="url(#brillo)" opacity="0">
+        <animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1;1" keyTimes="0;0.2;1" keySplines="0.4 0 0.2 1;0 0 1 1"><mpath href="#ida1"/></animateMotion>
+        <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.2;0.21;1" dur="5s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="6" fill="#9FD4FF" filter="url(#brillo)" opacity="0">
+        <animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.24;0.4;1" keySplines="0 0 1 1;0.4 0 0.2 1;0 0 1 1"><mpath href="#resp"/></animateMotion>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.23;0.24;0.4;0.41;1" dur="5s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="7" fill="#25A1FB" filter="url(#brillo)" opacity="0">
+        <animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.44;0.62;1" keySplines="0 0 1 1;0.4 0 0.2 1;0 0 1 1"><mpath href="#ida2"/></animateMotion>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.43;0.44;0.62;0.63;1" dur="5s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="7" fill="#FFFFFF" filter="url(#brillo)" opacity="0">
+        <animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0;1;1" keyTimes="0;0.68;0.94;1" keySplines="0 0 1 1;0.4 0 0.2 1;0 0 1 1"><mpath href="#vuelta"/></animateMotion>
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.67;0.68;0.94;0.95;1" dur="5s" repeatCount="indefinite"/>
+      </circle>
+    </g>
   </g>
 </svg>

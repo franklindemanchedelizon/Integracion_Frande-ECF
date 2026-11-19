@@ -1,2 +1,12 @@
 * text=auto eol=lf
 *.sh text eol=lf
+# El paquete de Composer solo lleva el SDK de PHP
+/guia export-ignore
+/docs export-ignore
+/ejemplos export-ignore
+/openapi export-ignore
+/bruno export-ignore
+/herramientas export-ignore
+/assets export-ignore
+/sdk/typescript export-ignore
+/.github export-ignore

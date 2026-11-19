@@ -1,0 +1,13 @@
+flowchart TB
+  FE["Frontend · web · POS · app<br/>nunca lleva la credencial"]
+  BE["Tu backend<br/>guarda la credencial y el estado de cada venta"]
+  ECF["Frande ECF<br/>valida · firma · QR<br/>cola y reintentos"]
+  DGII[("DGII<br/>TesteCF · eCF")]
+  WH["Tu endpoint de webhooks<br/>verifica la firma"]
+  FE -- "1 · venta" --> BE
+  BE -- "2 · POST" --> ECF
+  ECF -- "3 · 201 · QR" --> BE
+  ECF -- "4 · envío" --> DGII
+  DGII -- "5 · resultado" --> ECF
+  ECF -- "6 · webhook firmado" --> WH
+  WH -- "7 · actualiza la venta" --> BE

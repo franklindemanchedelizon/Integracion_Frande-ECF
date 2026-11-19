@@ -1,0 +1,13 @@
+sequenceDiagram
+  autonumber
+  participant S as Tu sistema
+  participant F as Frande ECF
+  participant D as DGII
+  S->>F: POST /documentos-ecf (JSON + Idempotency-Key)
+  F->>F: valida XSD · firma · código · QR
+  F-->>S: 201 · e-NCF, securityCode, qr_url (en_cola)
+  Note over S: la factura ya se puede imprimir
+  F->>D: envío en segundo plano
+  D-->>F: resultado
+  F-->>S: webhook ecf.accepted · conditionally_accepted · rejected
+  S->>F: opcional: GET …/status

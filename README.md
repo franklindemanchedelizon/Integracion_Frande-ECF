@@ -41,59 +41,13 @@ Este repositorio es la guía de integración de **Frande ECF**, la facturación 
 
 Tu sistema envía el comprobante en JSON. Frande ECF revisa los campos y el esquema oficial de la DGII, **firma** el XML con el certificado digital de la empresa, genera el **código de seguridad** y el **QR**, responde en el acto y se encarga del envío a la DGII, de los reintentos y de avisarte el resultado. Tu sistema nunca toca certificados, firmas ni el protocolo de la DGII.
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','secondaryColor':'#e8f4ff','tertiaryColor':'#ffffff','fontFamily':'Segoe UI, Inter, Arial'}}}%%
-flowchart LR
-  subgraph TU["Tu infraestructura"]
-    direction TB
-    FE["Frontend<br/>web · POS · app"]
-    BE["Tu backend<br/>guarda la credencial<br/>y el estado de cada venta"]
-    WH["Endpoint de webhooks<br/>verifica la firma"]
-  end
-  subgraph FR["Frande ECF"]
-    direction TB
-    API["API /v1"]
-    FIR["Validación XSD<br/>firma · código · QR"]
-    COLA["Cola de envío<br/>y reintentos"]
-    AV["Avisos firmados<br/>HMAC-SHA256"]
-  end
-  DGII[("DGII<br/>TesteCF · eCF")]
-
-  FE -- "venta" --> BE
-  BE -- "POST documentos-ecf" --> API
-  API --> FIR --> COLA
-  COLA -- "envío" --> DGII
-  DGII -- "resultado" --> COLA
-  COLA --> AV
-  AV -- "ecf.accepted · ecf.rejected · …" --> WH
-  WH --> BE
-  BE -- "código, QR, estado" --> FE
-```
+<p align="center"><img src="assets/diagramas/1-arquitectura.svg" alt="Arquitectura: el frontend habla con tu backend, que guarda la credencial y llama a Frande ECF; Frande ECF responde con el código y el QR, envía a la DGII y avisa el resultado a tu endpoint de webhooks." width="100%"></p>
 
 **La credencial vive solo en tu backend.** Nunca la pongas en una página web, en una app móvil ni en un frontend (React, Vue, Angular, Flutter…): cualquiera podría leerla. El frontend le habla a tu backend y tu backend a Frande ECF.
 
 ## 2. Dos formas de integrarte
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','fontFamily':'Segoe UI, Inter, Arial'}}}%%
-flowchart TB
-  subgraph A["Empresa que integra su propio sistema"]
-    direction LR
-    E1["Tu empresa<br/>cuenta · certificado · credenciales"] --> S1["Tu sistema"] --> F1["Frande ECF"]
-  end
-  subgraph B["Integrador o desarrollador de software"]
-    direction LR
-    D["Tu cuenta de integrador<br/>clientes · cupo de documentos"]
-    C1["Cliente 1<br/>su cuenta, su certificado,<br/>su credencial"]
-    C2["Cliente 2<br/>su cuenta, su certificado,<br/>su credencial"]
-    SW["Tu software<br/>(una credencial por cliente)"]
-    D -. administra .-> C1
-    D -. administra .-> C2
-    C1 --> SW
-    C2 --> SW
-    SW --> F2["Frande ECF"]
-  end
-```
+<p align="center"><img src="assets/diagramas/2-dos-vias.svg" alt="Dos formas de integrarse: una empresa con su propio sistema, o un integrador que administra a varios clientes, cada uno con su cuenta, su certificado y su credencial." width="100%"></p>
 
 | | Empresa con su propio sistema | Integrador / desarrollador |
 |---|---|---|
@@ -140,22 +94,7 @@ Todas las respuestas tienen la misma forma. Guarda el `requestId`: es lo que sop
 
 `POST /v1/{env}/documentos-ecf` · un solo endpoint para los diez tipos.
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','actorBkg':'#0F0D3F','actorTextColor':'#ffffff','signalColor':'#25A1FB','signalTextColor':'#0F0D3F','noteBkgColor':'#e8f4ff','noteTextColor':'#0F0D3F','fontFamily':'Segoe UI, Inter, Arial'}}}%%
-sequenceDiagram
-  autonumber
-  participant S as Tu sistema
-  participant F as Frande ECF
-  participant D as DGII
-  S->>F: POST /documentos-ecf (JSON, Idempotency-Key)
-  F->>F: valida campos y XSD, firma, código y QR
-  F-->>S: 201 · e-NCF, securityCode, qr_url (estado en_cola)
-  Note over S: ya puedes imprimir la factura
-  F->>D: envío en segundo plano
-  D-->>F: resultado
-  F-->>S: webhook ecf.accepted / ecf.conditionally_accepted / ecf.rejected
-  S->>F: (opcional) GET …/status para confirmar
-```
+<p align="center"><img src="assets/diagramas/3-emision.svg" alt="Secuencia de emisión: POST del JSON, validación y firma, respuesta 201 con e-NCF, código y QR, envío a la DGII en segundo plano y webhook con el resultado." width="100%"></p>
 
 - **El número e-NCF lo pones tú**, de las secuencias que la DGII autorizó a la empresa. Ver [guia/numeracion.md](guia/numeracion.md).
 - **`Idempotency-Key`** obligatoria con credenciales `foecf_*`: un valor único por venta. Repetir con la misma clave y el mismo cuerpo devuelve la misma respuesta y no emite dos veces.
@@ -192,20 +131,7 @@ Respuesta (`201`):
 
 ## 6. Estados del documento
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','fontFamily':'Segoe UI, Inter, Arial'}}}%%
-stateDiagram-v2
-  [*] --> en_cola: emitido y firmado
-  en_cola --> recibido: la DGII da track_id
-  en_cola --> en_cola: reintento (5, 10, 20, 40, 80 min)
-  recibido --> procesando
-  procesando --> aceptado
-  procesando --> rechazado
-  en_cola --> error: se agotan los reintentos
-  aceptado --> [*]
-  rechazado --> [*]: corrige y vuelve a emitir
-  error --> [*]: revisar
-```
+<p align="center"><img src="assets/diagramas/4-estados.svg" alt="Estados del documento: en_cola, recibido, procesando, aceptado o rechazado; error si se agotan los reintentos." width="100%"></p>
 
 | `estado_dgii` | Qué significa | Qué haces |
 |---|---|---|
@@ -222,21 +148,7 @@ Más en [guia/estados-y-consultas.md](guia/estados-y-consultas.md).
 
 En vez de consultar una y otra vez, Frande ECF te avisa con un `POST` firmado. Los destinos se configuran en el portal, uno o varios por ambiente.
 
-```mermaid
-%%{init: {'theme':'base','themeVariables':{'actorBkg':'#0F0D3F','actorTextColor':'#ffffff','signalColor':'#25A1FB','signalTextColor':'#0F0D3F','noteBkgColor':'#e8f4ff','noteTextColor':'#0F0D3F','fontFamily':'Segoe UI, Inter, Arial'}}}%%
-sequenceDiagram
-  participant F as Frande ECF
-  participant W as Tu endpoint
-  F->>W: POST · X-ECF-Signature, X-ECF-Timestamp, X-ECF-Nonce, X-ECF-Event
-  W->>W: ¿timestamp a menos de 5 min? ¿nonce nuevo? ¿firma igual?
-  alt firma válida
-    W-->>F: 200 en el acto
-    W->>W: procesa después (cola propia)
-  else firma inválida
-    W-->>F: 401
-  end
-  Note over F,W: si no respondes 2xx: reintentos a 1, 5, 30, 120 y 720 min
-```
+<p align="center"><img src="assets/diagramas/5-webhooks.svg" alt="Verificación de un webhook: comprobar tiempo, nonce y firma; responder 200 en el acto o 401 si la firma no es válida; reintentos si no hay 2xx." width="100%"></p>
 
 | Evento | Cuándo |
 |---|---|

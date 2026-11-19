@@ -1,0 +1,11 @@
+stateDiagram-v2
+  [*] --> en_cola: emitido y firmado
+  en_cola --> en_cola: reintento 5·10·20·40·80 min
+  en_cola --> recibido: la DGII da track_id
+  recibido --> procesando
+  procesando --> aceptado
+  procesando --> rechazado
+  en_cola --> error: se agotan los reintentos
+  aceptado --> [*]
+  rechazado --> [*]: corrige y emite de nuevo
+  error --> [*]: revisar
