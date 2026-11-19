@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/webhooks.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Webhooks y verificación de firma
 
@@ -228,9 +227,7 @@ app.MapPost("/ecf/webhook", async (HttpRequest req) =>
 app.Run();
 ```
 
-> i
-
-La firma se calcula de nuevo en cada reintento (con hora y nonce nuevos), así que el mismo aviso reenviado trae una firma distinta pero el mismo `X-ECF-Delivery-Id`. Usa el identificador del documento y el estado para no procesar dos veces el mismo cambio.
+> ℹ️ La firma se calcula de nuevo en cada reintento (con hora y nonce nuevos), así que el mismo aviso reenviado trae una firma distinta pero el mismo `X-ECF-Delivery-Id`. Usa el identificador del documento y el estado para no procesar dos veces el mismo cambio.
 
 > !
 

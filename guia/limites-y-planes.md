@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/limites-y-planes.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Límites y planes
 
@@ -19,9 +18,7 @@ _Dos clases de límites: de ritmo (por minuto) y del plan (documentos al mes). P
 - Tamaño máximo del cuerpo: **5 MB** al emitir y **256 KB** en el resto. Si te pasas, 413 `PAYLOAD_TOO_LARGE`.
 - Lista de documentos: hasta 200 por página; `batch-status`: hasta 50 por llamada.
 
-> i
-
-Los límites por credencial y por plan, y un límite del sandbox por IP, están en el plan de trabajo Próximamente. Hoy los de arriba son los vigentes.
+> ℹ️ Los límites por credencial y por plan, y un límite del sandbox por IP, están en el plan de trabajo Próximamente. Hoy los de arriba son los vigentes.
 
 ## La cuota del plan nunca bloquea
 

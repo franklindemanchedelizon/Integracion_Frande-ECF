@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/ambientes-y-credenciales.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Ambientes y credenciales
 
@@ -26,9 +25,7 @@ Lo que emites en TesteCF no toca la numeración, la cuota del plan ni el webhook
 
 Una credencial tiene forma `foecf_test_` + 8 caracteres hexadecimales + `_` + 48 caracteres hexadecimales. Los primeros 8 son su identificador público; el resto es el secreto. El ECF guarda solo una huella: **la clave completa se muestra una sola vez**, al crearla o rotarla.
 
-> i
-
-La clave original de la cuenta (`ecf_sk_…`) sigue funcionando para los sistemas que ya la usan (como el ERP de Frande). Para sistemas nuevos usa siempre las credenciales `foecf_*`: separan pruebas de producción y exigen `Idempotency-Key`.
+> ℹ️ La clave original de la cuenta (`ecf_sk_…`) sigue funcionando para los sistemas que ya la usan (como el ERP de Frande). Para sistemas nuevos usa siempre las credenciales `foecf_*`: separan pruebas de producción y exigen `Idempotency-Key`.
 
 ### Crear, rotar y revocar
 
@@ -40,9 +37,7 @@ Todo se hace desde el portal, en _Credenciales de API_, con tu sesión. **Una cr
 - **Último uso.** El portal muestra la fecha y la IP del último uso de cada credencial.
 - Cada vez que se crea, rota o revoca una credencial, el dueño de la cuenta recibe un aviso por correo.
 
-> i
-
-Restringir una credencial por IP y limitarla por alcances (solo emitir, solo consultar…) Próximamente. Hoy una credencial puede usar todas las operaciones de su ambiente.
+> ℹ️ Restringir una credencial por IP y limitarla por alcances (solo emitir, solo consultar…) Próximamente. Hoy una credencial puede usar todas las operaciones de su ambiente.
 
 Si tienes una credencial que filtraste por error, revócala y crea otra. Nunca la pegues en repositorios, tickets ni correos.
 
@@ -69,6 +64,4 @@ GET `/v1/{env}/certificates/info`datos del certificado activo, días para vencer
 
 POST `/v1/{env}/certificates/test-auth`prueba que la DGII acepta tu certificado (límite de 10 por minuto)
 
-> i
-
-**Subir el certificado sin compartirlo: enlace de carga** Próximamente. Hoy el certificado lo sube el titular de la cuenta desde el portal. Una credencial de API no sube ni cambia el certificado, y tu proveedor o integrador nunca debe pedirte el archivo ni su contraseña.
+> ℹ️ **Subir el certificado sin compartirlo: enlace de carga** Próximamente. Hoy el certificado lo sube el titular de la cuenta desde el portal. Una credencial de API no sube ni cambia el certificado, y tu proveedor o integrador nunca debe pedirte el archivo ni su contraseña.

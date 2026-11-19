@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "Frande ECF",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}

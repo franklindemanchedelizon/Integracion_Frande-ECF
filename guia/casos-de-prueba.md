@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/casos-de-prueba.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Casos de prueba del sandbox
 
@@ -8,9 +7,7 @@ _Doce comprobaciones para saber que tu sistema quedó bien conectado antes de pa
 
 No son el set de certificación de la DGII (ese lo hace el contribuyente una vez, en CerteCF). Estos casos se repiten cada vez que conectas otro sistema. El ECF los **detecta solo** a partir de lo que llega con tu credencial de pruebas (`foecf_test_`) y marca cada uno; no tienes que avisarle nada.
 
-> i
-
-La detección nunca bloquea ni retrasa nada: se registra cuando la respuesta ya salió. Un fallo se anota con su código de error, pero no borra un caso que ya estaba completo.
+> ℹ️ La detección nunca bloquea ni retrasa nada: se registra cuando la respuesta ya salió. Un fallo se anota con su código de error, pero no borra un caso que ya estaba completo.
 
 ## Los doce casos
 

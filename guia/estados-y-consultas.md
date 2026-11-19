@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/estados-y-consultas.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Estados, consultas y archivos
 
@@ -19,9 +18,7 @@ El campo `estado_dgii` pasa por estos valores:
 | `rechazado` | La DGII lo rechazó; el motivo está en `dgii_code` y `dgii_message`. |
 | `error` | Se agotaron los reintentos de envío sin respuesta de la DGII. |
 
-> i
-
-Si la DGII no responde, **la emisión sigue**: el documento queda firmado en `en_cola` y el ECF reintenta el envío a los 5, 10, 20, 40 y 80 minutos (con tope de 6 horas y hasta 10 intentos). Ver [Contingencia](contingencia.md).
+> ℹ️ Si la DGII no responde, **la emisión sigue**: el documento queda firmado en `en_cola` y el ECF reintenta el envío a los 5, 10, 20, 40 y 80 minutos (con tope de 6 horas y hasta 10 intentos). Ver [Contingencia](contingencia.md).
 
 ## Consultar un documento
 

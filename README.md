@@ -1,100 +1,166 @@
-# Integración Frande ECF
+# Frande ECF · Integración
 
-Guía, contrato y SDK para integrar cualquier sistema (ERP, punto de venta, tienda en línea, app) con **Frande ECF**, el servicio de facturación electrónica (e-CF) de Frande One para la **DGII de República Dominicana**.
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-25A1FB)](LICENSE)
+[![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0-0F0D3F)](openapi/frande-ecf-v1.openapi.json)
+[![npm @frandeone/ecf](https://img.shields.io/badge/npm-%40frandeone%2Fecf-25A1FB)](sdk/typescript)
+[![Packagist frandeone/ecf-sdk](https://img.shields.io/badge/packagist-frandeone%2Fecf--sdk-0F0D3F)](sdk/php)
 
-> **Este repositorio es solo de integración.** El servicio Frande ECF no se descarga ni se instala: corre en la nube de Frande y tu sistema lo usa por su API. Aquí está cómo conectarte, qué enviar, qué te responde y cómo recibir cada estado y aviso. Los SDK son opcionales: librerías que puedes agregar a tu propio proyecto para llamar a la API con menos código.
+Este repositorio es la guía de integración de **Frande ECF**, la facturación electrónica (e-CF) de Frande One para la DGII de República Dominicana. Aquí aprendes a conectar tu sistema, qué enviar, qué te responde, cómo recibir cada estado y cada aviso, y qué librerías puedes agregar a tu proyecto para llamar a la API con menos código.
 
-Tu sistema envía el comprobante en JSON. Frande ECF lo convierte a XML, lo **firma** con el certificado digital de tu empresa, genera el código de seguridad y el QR, lo **envía a la DGII**, sigue su estado y te avisa por webhook. Tú no manejas certificados, firmas ni el protocolo de la DGII.
+<p align="center"><img src="assets/flujo-ecf.svg" alt="Flujo de un e-CF con Frande ECF" width="100%"></p>
 
 | | |
 |---|---|
 | API | `https://ecf.frandeone.com/v1` |
 | Documentación interactiva | https://ecf.frandeone.com/api-docs |
-| Contrato OpenAPI 3.0 | [`openapi/frande-ecf-v1.openapi.json`](openapi/frande-ecf-v1.openapi.json) (también en https://ecf.frandeone.com/openapi.json) |
-| Portal (cuenta, credenciales, certificado, webhooks) | https://ecf.frandeone.com |
-| SDK TypeScript / Node | [`sdk/typescript`](sdk/typescript) |
-| SDK PHP | [`sdk/php`](sdk/php) |
-| **Guía completa para integradores** | [`guia/`](guia/README.md) (la misma de https://ecf.frandeone.com/developers/docs/) |
+| Contrato OpenAPI 3.0 | [`openapi/frande-ecf-v1.openapi.json`](openapi/frande-ecf-v1.openapi.json) |
+| Portal (cuenta, certificado, credenciales, webhooks) | https://ecf.frandeone.com |
+| Guía completa, página por página | [`guia/`](guia/README.md) |
 
-## Guía completa
+## Contenido
 
-Todo lo que necesitas para integrar tu sistema, página por página:
-
-| Tema | Página |
-|---|---|
-| Inicio rápido (de cero a tu primer e-CF en TesteCF) | [guia/inicio-rapido.md](guia/inicio-rapido.md) |
-| Conecta tu sistema (arquitectura, qué guardar, en qué orden) | [guia/conecta-tu-sistema.md](guia/conecta-tu-sistema.md) |
-| Ambientes y credenciales | [guia/ambientes-y-credenciales.md](guia/ambientes-y-credenciales.md) |
-| **Emitir un e-CF** (cuerpo JSON y ejemplo completo de los 10 tipos) | [guia/emitir.md](guia/emitir.md) |
-| Casos de prueba del sandbox | [guia/casos-de-prueba.md](guia/casos-de-prueba.md) |
-| Numeración e-NCF | [guia/numeracion.md](guia/numeracion.md) |
-| Idempotencia y reintentos | [guia/idempotencia.md](guia/idempotencia.md) |
-| **Estados, consultas y archivos** (todos los estados y qué hacer con cada uno) | [guia/estados-y-consultas.md](guia/estados-y-consultas.md) |
-| Corregir y anular (notas de crédito y débito, ANECF) | [guia/corregir-y-anular.md](guia/corregir-y-anular.md) |
-| Recibidos y aprobación comercial (ARECF, ACECF) | [guia/recibidos.md](guia/recibidos.md) |
-| Contingencia | [guia/contingencia.md](guia/contingencia.md) · resumen del instructivo DGII: [docs/contingencia-dgii.md](docs/contingencia-dgii.md) |
-| **Webhooks** (todos los eventos, su cuerpo y la verificación de firma) | [guia/webhooks.md](guia/webhooks.md) |
-| **Catálogo de errores** (cada código, causa y qué hacer) | [guia/errores.md](guia/errores.md) |
-| Límites y planes | [guia/limites-y-planes.md](guia/limites-y-planes.md) |
-| Developers y revendedores | [guia/developers-y-revendedores.md](guia/developers-y-revendedores.md) |
-| Referencia y registro de cambios | [guia/referencia.md](guia/referencia.md) |
-| Texto para asistentes de IA | [guia/llms.txt](guia/llms.txt) |
-
-Las páginas de `guia/` se generan desde el ECF; si algo no coincide, manda la versión publicada en https://ecf.frandeone.com/developers/docs/.
+1. [Cómo funciona](#1-cómo-funciona)
+2. [Dos formas de integrarte](#2-dos-formas-de-integrarte)
+3. [Cómo empezar](#3-cómo-empezar)
+4. [Ambientes y autenticación](#4-ambientes-y-autenticación)
+5. [Emitir un e-CF](#5-emitir-un-e-cf)
+6. [Estados del documento](#6-estados-del-documento)
+7. [Webhooks](#7-webhooks)
+8. [Consultas y otras operaciones](#8-consultas-y-otras-operaciones)
+9. [Errores, idempotencia y límites](#9-errores-idempotencia-y-límites)
+10. [Contingencia](#10-contingencia)
+11. [Tu lenguaje](#11-tu-lenguaje)
+12. [SDK](#12-sdk)
+13. [Pruebas](#13-pruebas)
+14. [Guía completa](#14-guía-completa)
+15. [Soporte](#15-soporte)
 
 ---
 
-## 1. Cómo empezar
+## 1. Cómo funciona
 
-1. **Crea tu cuenta** en https://ecf.frandeone.com con el RNC de tu empresa.
-2. **Sube tu certificado digital** (`.p12`) desde el portal. Lo emite una entidad autorizada (por ejemplo DigiFirma). Frande ECF lo guarda cifrado; nunca viaja por la API.
-3. **Crea tus credenciales de API** en el portal, sección *Credenciales de API*:
-   - `foecf_test_...` para **pruebas** (`TesteCF`).
-   - `foecf_live_...` para **producción** (`eCF`), cuando tu cuenta esté habilitada.
-4. **Prueba la conexión** con `GET /v1/TesteCF/cuenta` (sección 3).
-5. **Completa los casos de prueba de integración** (`GET /v1/TesteCF/pruebas-integracion`): son 12 casos, 8 obligatorios. Cuando `listo_para_produccion` sea `true`, pasa a `eCF`.
+Tu sistema envía el comprobante en JSON. Frande ECF revisa los campos y el esquema oficial de la DGII, **firma** el XML con el certificado digital de la empresa, genera el **código de seguridad** y el **QR**, responde en el acto y se encarga del envío a la DGII, de los reintentos y de avisarte el resultado. Tu sistema nunca toca certificados, firmas ni el protocolo de la DGII.
 
-## 2. Ambientes
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','secondaryColor':'#e8f4ff','tertiaryColor':'#ffffff','fontFamily':'Segoe UI, Inter, Arial'}}}%%
+flowchart LR
+  subgraph TU["Tu infraestructura"]
+    direction TB
+    FE["Frontend<br/>web · POS · app"]
+    BE["Tu backend<br/>guarda la credencial<br/>y el estado de cada venta"]
+    WH["Endpoint de webhooks<br/>verifica la firma"]
+  end
+  subgraph FR["Frande ECF"]
+    direction TB
+    API["API /v1"]
+    FIR["Validación XSD<br/>firma · código · QR"]
+    COLA["Cola de envío<br/>y reintentos"]
+    AV["Avisos firmados<br/>HMAC-SHA256"]
+  end
+  DGII[("DGII<br/>TesteCF · eCF")]
 
-El ambiente va en la ruta, justo después de `/v1`:
+  FE -- "venta" --> BE
+  BE -- "POST documentos-ecf" --> API
+  API --> FIR --> COLA
+  COLA -- "envío" --> DGII
+  DGII -- "resultado" --> COLA
+  COLA --> AV
+  AV -- "ecf.accepted · ecf.rejected · …" --> WH
+  WH --> BE
+  BE -- "código, QR, estado" --> FE
+```
+
+**La credencial vive solo en tu backend.** Nunca la pongas en una página web, en una app móvil ni en un frontend (React, Vue, Angular, Flutter…): cualquiera podría leerla. El frontend le habla a tu backend y tu backend a Frande ECF.
+
+## 2. Dos formas de integrarte
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','fontFamily':'Segoe UI, Inter, Arial'}}}%%
+flowchart TB
+  subgraph A["Empresa que integra su propio sistema"]
+    direction LR
+    E1["Tu empresa<br/>cuenta · certificado · credenciales"] --> S1["Tu sistema"] --> F1["Frande ECF"]
+  end
+  subgraph B["Integrador o desarrollador de software"]
+    direction LR
+    D["Tu cuenta de integrador<br/>clientes · cupo de documentos"]
+    C1["Cliente 1<br/>su cuenta, su certificado,<br/>su credencial"]
+    C2["Cliente 2<br/>su cuenta, su certificado,<br/>su credencial"]
+    SW["Tu software<br/>(una credencial por cliente)"]
+    D -. administra .-> C1
+    D -. administra .-> C2
+    C1 --> SW
+    C2 --> SW
+    SW --> F2["Frande ECF"]
+  end
+```
+
+| | Empresa con su propio sistema | Integrador / desarrollador |
+|---|---|---|
+| Quién tiene la cuenta | La empresa | Cada cliente tiene la suya; tú tienes una cuenta de integrador |
+| Certificado digital | El de la empresa | El de cada cliente (tú no lo custodias) |
+| Credencial que usa tu software | La de la empresa | La que cada cliente crea en su portal; tu software guarda una por cliente |
+| Documentos | Del plan de la empresa | Del pool de tu plan, con cupo por cliente |
+| Cobro a tus clientes | No aplica | Lo manejas tú con tus clientes |
+| Si dejas de pagar | — | **Tus clientes siguen emitiendo**: su facturación nunca se bloquea |
+
+La API de emisión es la misma en los dos casos. Lo que cambia es la cuenta: el integrador administra a sus clientes desde la página «Desarrollador» del portal (alta de clientes, enlace de referido, cupo por cliente). La API de gestión para integradores (`/v1/developer/…`) y el portal propio `/developers` están en camino. Detalle actual en [guia/developers-y-revendedores.md](guia/developers-y-revendedores.md).
+
+## 3. Cómo empezar
+
+1. **Crea la cuenta** en https://ecf.frandeone.com con el RNC de la empresa.
+2. **Sube el certificado digital** (`.p12`) desde el portal. Lo emite una entidad autorizada (por ejemplo DigiFirma) y se guarda cifrado; nunca viaja por la API.
+3. **Crea las credenciales** en *Credenciales de API*: `foecf_test_…` para pruebas y, cuando la cuenta esté habilitada, `foecf_live_…` para producción.
+4. **Prueba la conexión** con `GET /v1/TesteCF/cuenta`.
+5. **Pasa los casos de prueba** (`GET /v1/TesteCF/pruebas-integracion`): 12 casos, 8 obligatorios. Con `listo_para_produccion: true`, cambia a `eCF`.
+
+Paso a paso con ejemplos en varios lenguajes: [guia/inicio-rapido.md](guia/inicio-rapido.md) y [guia/conecta-tu-sistema.md](guia/conecta-tu-sistema.md).
+
+## 4. Ambientes y autenticación
 
 | Ambiente | Ruta | Para qué | Valor fiscal |
 |---|---|---|---|
-| `TesteCF` | `/v1/TesteCF/...` | Desarrollo y pruebas | Ninguno |
-| `eCF` | `/v1/eCF/...` | Producción | Sí |
+| `TesteCF` | `/v1/TesteCF/…` | Desarrollo y pruebas | Ninguno |
+| `eCF` | `/v1/eCF/…` | Producción | Sí |
 
-La credencial de pruebas solo funciona en `TesteCF` y la de producción solo en `eCF`. Si los mezclas, la API responde `403`.
-
-## 3. Autenticación
-
-Envía tu credencial en el encabezado **`X-API-Key`** (recomendado). También se acepta como `Authorization: Bearer <clave>`, `Authorization: <clave>` o `ApiKey: <clave>`.
+La credencial va en el encabezado **`X-API-Key`** (recomendado). También se acepta `Authorization: Bearer <clave>`, `Authorization: <clave>` o `ApiKey: <clave>`. La credencial de pruebas solo vale en `TesteCF` y la de producción solo en `eCF`.
 
 ```bash
-curl -s https://ecf.frandeone.com/v1/TesteCF/cuenta \
-  -H "X-API-Key: $FRANDE_ECF_KEY"
+curl -s https://ecf.frandeone.com/v1/TesteCF/cuenta -H "X-API-Key: $FRANDE_ECF_KEY"
 ```
 
-La respuesta trae tu RNC, el ambiente efectivo, la credencial usada y el estado de tu certificado. Esta consulta nunca emite nada.
-
-Guarda la clave en una variable de entorno o en un gestor de secretos, **nunca en el código ni en el repositorio**.
-
-## 4. Formato de las respuestas
+Todas las respuestas tienen la misma forma. Guarda el `requestId`: es lo que soporte necesita para rastrear una petición.
 
 ```json
-{ "success": true,  "data": { ... }, "requestId": "uuid" }
-{ "success": false, "error": { "code": "ECF_VALIDATION_FAILED", "message": "..." }, "requestId": "uuid" }
+{ "success": true,  "data": { },  "requestId": "uuid" }
+{ "success": false, "error": { "code": "ECF_VALIDATION_FAILED", "message": "…" }, "requestId": "uuid" }
 ```
-
-Guarda el `requestId`: es lo que soporte necesita para rastrear una petición. La lista completa de códigos de error está en el contrato OpenAPI (`components.schemas.ErrorCode`).
 
 ## 5. Emitir un e-CF
 
-`POST /v1/{env}/documentos-ecf`
+`POST /v1/{env}/documentos-ecf` · un solo endpoint para los diez tipos.
 
-- **El número e-NCF lo pones tú**, desde las secuencias que la DGII autorizó a tu empresa. Frande ECF no reserva números en producción.
-- Encabezado **`Idempotency-Key`** obligatorio: un valor único por venta (de 8 a 128 caracteres). Si repites la petición con la misma clave y el mismo cuerpo, recibes la misma respuesta (`Idempotent-Replayed: true`) y no se emite dos veces.
-- Campo opcional **`referencia_externa`**: el identificador de la venta en tu sistema. Si lo reenvías, la API devuelve el documento que ya existe (`duplicado_por_referencia: true`).
-- Con `?validate=true` solo se valida: no se envía a la DGII ni se gasta la secuencia.
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','actorBkg':'#0F0D3F','actorTextColor':'#ffffff','signalColor':'#25A1FB','signalTextColor':'#0F0D3F','noteBkgColor':'#e8f4ff','noteTextColor':'#0F0D3F','fontFamily':'Segoe UI, Inter, Arial'}}}%%
+sequenceDiagram
+  autonumber
+  participant S as Tu sistema
+  participant F as Frande ECF
+  participant D as DGII
+  S->>F: POST /documentos-ecf (JSON, Idempotency-Key)
+  F->>F: valida campos y XSD, firma, código y QR
+  F-->>S: 201 · e-NCF, securityCode, qr_url (estado en_cola)
+  Note over S: ya puedes imprimir la factura
+  F->>D: envío en segundo plano
+  D-->>F: resultado
+  F-->>S: webhook ecf.accepted / ecf.conditionally_accepted / ecf.rejected
+  S->>F: (opcional) GET …/status para confirmar
+```
+
+- **El número e-NCF lo pones tú**, de las secuencias que la DGII autorizó a la empresa. Ver [guia/numeracion.md](guia/numeracion.md).
+- **`Idempotency-Key`** obligatoria con credenciales `foecf_*`: un valor único por venta. Repetir con la misma clave y el mismo cuerpo devuelve la misma respuesta y no emite dos veces.
+- **`referencia_externa`** (opcional): el identificador de la venta en tu sistema. Si lo reenvías, recibes el documento que ya existe.
+- **`?validate=true`**: solo valida; no envía ni gasta la secuencia.
 
 ```bash
 curl -s -X POST https://ecf.frandeone.com/v1/TesteCF/documentos-ecf \
@@ -104,7 +170,7 @@ curl -s -X POST https://ecf.frandeone.com/v1/TesteCF/documentos-ecf \
   --data @ejemplos/payloads/e31.json
 ```
 
-Respuesta inmediata (la DGII se procesa en segundo plano):
+Respuesta (`201`):
 
 ```json
 {
@@ -112,88 +178,190 @@ Respuesta inmediata (la DGII se procesa en segundo plano):
   "data": {
     "rnc": "130000001",
     "ecf": "E310000000001",
-    "internalTrackId": "6f1c…",
+    "internalTrackId": "6f1c2b8e-…",
     "securityCode": "A1B2C3",
     "qr_url": "https://ecf.dgii.gov.do/…",
     "signedDate": "2026-04-15T14:03:22Z",
     "isRFCE": false
-  }
+  },
+  "requestId": "…"
 }
 ```
 
-Con `securityCode` y `qr_url` ya puedes imprimir la representación impresa. El resultado de la DGII llega después por webhook o por consulta (sección 6).
+**Tipos:** 31 Crédito Fiscal · 32 Consumo · 33 Nota de Débito · 34 Nota de Crédito · 41 Compras · 43 Gastos Menores · 44 Regímenes Especiales · 45 Gubernamental · 46 Exportaciones · 47 Pagos al Exterior. Las facturas de consumo (32) menores de RD$250,000 van como resumen (RFCE) y la API lo resuelve sola. El cuerpo de cada tipo, campo por campo y con ejemplo completo: [guia/emitir.md](guia/emitir.md).
 
-**Tipos de e-CF:** 31 Crédito Fiscal · 32 Consumo · 33 Nota de Débito · 34 Nota de Crédito · 41 Compras · 43 Gastos Menores · 44 Regímenes Especiales · 45 Gubernamental · 46 Exportaciones · 47 Pagos al Exterior. Las facturas de consumo (32) menores de RD$250,000 se envían como resumen (RFCE), y la API lo resuelve sola.
+## 6. Estados del documento
 
-Ejemplos de cuerpo en [`ejemplos/payloads`](ejemplos/payloads).
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#0F0D3F','primaryTextColor':'#ffffff','primaryBorderColor':'#25A1FB','lineColor':'#25A1FB','fontFamily':'Segoe UI, Inter, Arial'}}}%%
+stateDiagram-v2
+  [*] --> en_cola: emitido y firmado
+  en_cola --> recibido: la DGII da track_id
+  en_cola --> en_cola: reintento (5, 10, 20, 40, 80 min)
+  recibido --> procesando
+  procesando --> aceptado
+  procesando --> rechazado
+  en_cola --> error: se agotan los reintentos
+  aceptado --> [*]
+  rechazado --> [*]: corrige y vuelve a emitir
+  error --> [*]: revisar
+```
 
-## 6. Consultar
+| `estado_dgii` | Qué significa | Qué haces |
+|---|---|---|
+| `en_cola` | Firmado y guardado; aún no sale a la DGII o espera un reintento | Nada: la factura ya es imprimible |
+| `recibido` | La DGII dio un `track_id`, sin resultado final | Esperar el aviso |
+| `procesando` | La DGII lo está validando | Esperar el aviso |
+| `aceptado` | Aprobado. Incluye **aceptado condicional** (`dgii_code` 4, con observaciones en `dgii_message`) | Marcar la venta como aceptada |
+| `rechazado` | La DGII lo rechazó; motivo en `dgii_code` y `dgii_message` | Corregir y emitir de nuevo |
+| `error` | Se agotaron los reintentos sin respuesta | Revisar o escribir a soporte |
+
+Más en [guia/estados-y-consultas.md](guia/estados-y-consultas.md).
+
+## 7. Webhooks
+
+En vez de consultar una y otra vez, Frande ECF te avisa con un `POST` firmado. Los destinos se configuran en el portal, uno o varios por ambiente.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'actorBkg':'#0F0D3F','actorTextColor':'#ffffff','signalColor':'#25A1FB','signalTextColor':'#0F0D3F','noteBkgColor':'#e8f4ff','noteTextColor':'#0F0D3F','fontFamily':'Segoe UI, Inter, Arial'}}}%%
+sequenceDiagram
+  participant F as Frande ECF
+  participant W as Tu endpoint
+  F->>W: POST · X-ECF-Signature, X-ECF-Timestamp, X-ECF-Nonce, X-ECF-Event
+  W->>W: ¿timestamp a menos de 5 min? ¿nonce nuevo? ¿firma igual?
+  alt firma válida
+    W-->>F: 200 en el acto
+    W->>W: procesa después (cola propia)
+  else firma inválida
+    W-->>F: 401
+  end
+  Note over F,W: si no respondes 2xx: reintentos a 1, 5, 30, 120 y 720 min
+```
+
+| Evento | Cuándo |
+|---|---|
+| `ecf.status_update` | Cambió el estado ante la DGII |
+| `ecf.accepted` · `ecf.conditionally_accepted` · `ecf.rejected` | Resultado final de la DGII |
+| `ecf.received` | Te llegó un e-CF de un proveedor |
+| `ecf.commercial_status` | Un comprador aprobó o rechazó comercialmente tu documento |
+| `ecf.buyer_delivery` | Resultado de la entrega al comprador |
+| `anecf.completed` | Terminó una anulación de secuencias |
+| `certificate.expiring` | Tu certificado vence pronto (solo producción) |
+| `quota.threshold` · `contingency.started` · `contingency.ended` | Próximamente |
+
+**Firma:** `X-ECF-Signature` = `sha256=` + HMAC-SHA256 en hex de `timestamp.nonce.cuerpo` con el secreto del destino. Los dos SDK traen la verificación lista. Cuerpo de cada evento: [guia/webhooks.md](guia/webhooks.md).
+
+## 8. Consultas y otras operaciones
 
 | Operación | Ruta |
 |---|---|
-| Por e-NCF | `GET /v1/{env}/documentos-ecf/por-encf/{encf}` |
-| Por tu referencia | `GET /v1/{env}/documentos-ecf/por-referencia/{ref}` |
-| Por ID interno | `GET /v1/{env}/documentos-ecf/{internalTrackId}` |
-| Estado en vivo ante la DGII | `GET /v1/{env}/documentos-ecf/{internalTrackId}/status` |
-| Varios a la vez | `POST /v1/{env}/documentos-ecf/batch-status` |
-| PDF (representación impresa) | `GET /v1/{env}/documentos-ecf/{internalTrackId}/pdf` |
-| XML firmado | `GET /v1/{env}/documentos-ecf/{internalTrackId}/xml` |
-| Listado | `GET /v1/{env}/documentos-ecf` |
+| Documento por e-NCF / por tu referencia / por ID | `GET …/documentos-ecf/por-encf/{encf}` · `…/por-referencia/{ref}` · `…/{internalTrackId}` |
+| Estado en vivo ante la DGII | `GET …/documentos-ecf/{internalTrackId}/status` |
+| Varios a la vez (hasta 50) | `POST …/documentos-ecf/batch-status` |
+| PDF (representación impresa) y XML firmado | `GET …/{internalTrackId}/pdf` · `…/xml` |
+| Anular secuencias no usadas (ANECF) | `POST …/anulacion-ecf` |
+| Recibidos, su XML y su acuse (ARECF) | `GET …/documentos-recibidos` · `…/{id}/xml` · `…/{id}/arecf` |
+| Aprobación o rechazo comercial (ACECF) | `POST …/documentos-recibidos/{id}/approve` · `…/reject` |
+| Directorio DGII de un comprador | `GET …/directorio/{rnc}` |
+| Certificado activo y prueba de autenticación con la DGII | `GET …/certificates/info` · `POST …/certificates/test-auth` |
 
-Estados de la DGII: **Aceptado**, **Aceptado Condicional** (válido, con observaciones), **Rechazado** (corrige y vuelve a emitir) y **En proceso**.
+Notas de crédito y débito, anulaciones y recibidos: [guia/corregir-y-anular.md](guia/corregir-y-anular.md) y [guia/recibidos.md](guia/recibidos.md).
 
-## 7. Otras operaciones
+## 9. Errores, idempotencia y límites
 
-- **Anular secuencias no usadas (ANECF):** `POST /v1/{env}/anulacion-ecf`.
-- **Recepción:** `GET /v1/{env}/documentos-recibidos` y su XML, su acuse (ARECF) y la **aprobación o rechazo comercial** (ACECF): `POST /v1/{env}/documentos-recibidos/{id}/approve` o `/reject`.
-- **Directorio DGII:** `GET /v1/{env}/directorio/{rnc}` dice si un comprador recibe e-CF electrónicamente.
-- **Certificado:** `GET /v1/{env}/certificates/info` y `POST /v1/{env}/certificates/test-auth` (prueba la autenticación con la DGII sin emitir).
+- Cada error trae un `code` estable. Catálogo completo, con la causa y qué hacer: [guia/errores.md](guia/errores.md).
+- Las respuestas `5xx`, `408` y `429` no quedan guardadas por la idempotencia: reintenta con la **misma** `Idempotency-Key`. Ver [guia/idempotencia.md](guia/idempotencia.md).
+- Límite de emisión: 30 por minuto por cuenta y 5 MB por cuerpo. Al pasarte, `429` con `Retry-After`. Ver [guia/limites-y-planes.md](guia/limites-y-planes.md).
 
-## 8. Webhooks
+## 10. Contingencia
 
-Configura uno o varios destinos por ambiente en el portal (*Credenciales de API*). Cada aviso trae:
+Según el *Instructivo de Contingencia de Facturación Electrónica* de la DGII y el Decreto 587-24 (arts. 39 a 43):
 
-| Encabezado | Contenido |
-|---|---|
-| `X-ECF-Event` | `ecf.accepted`, `ecf.conditionally_accepted`, `ecf.rejected`, `ecf.status_update`, `ecf.received`, `ecf.commercial_status`, `ecf.buyer_delivery`, `anecf.completed`, `certificate.expiring` |
-| `X-ECF-Signature` | `sha256=` + HMAC-SHA256 en hex de `timestamp.nonce.cuerpo` con el secreto del destino |
-| `X-ECF-Timestamp` | Segundos Unix. Rechaza si difiere más de 5 minutos de tu reloj |
-| `X-ECF-Nonce` | Único por entrega. Rechaza uno ya visto |
-| `X-ECF-Environment`, `X-ECF-Delivery-Id` | Ambiente e identificador de la entrega |
-
-Responde `2xx` rápido y procesa después. Si fallas, se reintenta a los 1, 5, 30, 120 y 720 minutos. Los dos SDK traen la verificación de la firma lista.
-
-## 9. Límites
-
-Emisión: 30 por minuto por cuenta. Al pasarte recibes `429` con `Retry-After`. Las respuestas `5xx`, `408` y `429` no quedan guardadas por la idempotencia: reintenta con la misma `Idempotency-Key`.
-
-## 10. Contingencia (qué hacer si algo falla)
-
-Resumen del *Instructivo de Contingencia de Facturación Electrónica* de la DGII y del Decreto 587-24 (arts. 39 a 43). Detalle en [`guia/contingencia.md`](guia/contingencia.md) y en [`docs/contingencia-dgii.md`](docs/contingencia-dgii.md).
-
-| Qué falla | Qué pasa | Qué haces tú |
+| Qué falla | Qué pasa | Qué hace la empresa |
 |---|---|---|
-| **La DGII** no responde o está en mantenimiento | Frande ECF ya firmó tu e-CF (código de seguridad y QR válidos), lo guarda y lo envía solo cuando la DGII vuelve | Nada. Imprime normal |
-| **Tu conexión** a Frande ECF | Tu sistema no recibe la firma | Reintenta con la **misma** `Idempotency-Key`. Si no se recupera, sigue la fila de abajo |
-| **No puedes emitir e-CF** (corte prolongado) | Contingencia formal | Tu empresa declara la **entrada en contingencia** en la Oficina Virtual de la DGII (Facturación Electrónica → Contingencia FE), emite comprobantes **serie B** autorizados (máximo 15 días), declara la **salida** y, en 30 días, envía los e-CF que **reemplazan** esos comprobantes (código de modificación 4, solo a la DGII) |
+| **La DGII** no responde o está en mantenimiento | Frande ECF ya firmó el e-CF (código y QR válidos), lo guarda y lo envía cuando la DGII vuelve | Nada. Imprime normal |
+| **La conexión** entre tu sistema y Frande ECF | Tu sistema no recibe la firma | Reintenta con la misma `Idempotency-Key` |
+| **No se puede emitir e-CF** (corte prolongado) | Contingencia formal | Declarar la entrada en la Oficina Virtual (Facturación Electrónica → Contingencia FE), emitir serie B autorizada (máximo 15 días), declarar la salida y, en 30 días, enviar los e-CF de reemplazo (código 4, solo a la DGII) |
 
-## 11. SDK (opcional)
+Detalle: [guia/contingencia.md](guia/contingencia.md) y [docs/contingencia-dgii.md](docs/contingencia-dgii.md).
 
-No son obligatorios: puedes llamar a la API directamente con HTTP desde cualquier lenguaje. Si usas TypeScript/Node o PHP, estas librerías ya traen la autenticación, la idempotencia, los errores con su código y la verificación de la firma de los webhooks. Se agregan a tu proyecto con:
+## 11. Tu lenguaje
 
-- **TypeScript / Node 18+:** [`sdk/typescript`](sdk/typescript) · `npm install @frande/ecf`
-- **PHP 8.1+:** [`sdk/php`](sdk/php) · `composer require frande/ecf-sdk`
+La API es HTTP y JSON: funciona desde cualquier lenguaje.
 
-Para otros lenguajes, genera un cliente desde [`openapi/frande-ecf-v1.openapi.json`](openapi/frande-ecf-v1.openapi.json) con OpenAPI Generator o con la herramienta de tu preferencia.
+| Lenguaje | Cómo |
+|---|---|
+| TypeScript / JavaScript (Node 18+) | SDK [`@frandeone/ecf`](sdk/typescript) |
+| PHP 8.1+ | SDK [`frandeone/ecf-sdk`](sdk/php) |
+| Python, C# / .NET | Ejemplos en cada página de la [guía](guia/README.md) |
+| Java, Kotlin, Swift, Go, C++, Delphi, Ruby… | Genera un cliente desde el contrato OpenAPI (abajo) o usa los ejemplos con `curl` |
+| React, Vue, Angular, Flutter, apps móviles | **Nunca llames a la API desde ahí.** Llama a tu backend y que él use el SDK |
 
-## 12. Soporte
+Generar un cliente con [OpenAPI Generator](https://openapi-generator.tech):
 
-- Portal: https://ecf.frandeone.com
-- Correo: soporte@frandeone.com
-- Teléfono / WhatsApp: 809-765-3566
+```bash
+# Java, Kotlin, Swift, C#, Go, Python… cambia el -g por tu lenguaje
+npx @openapitools/openapi-generator-cli generate \
+  -i https://ecf.frandeone.com/openapi.json -g java -o cliente-frande-ecf
+```
 
-Incluye siempre el `requestId` de la respuesta.
+## 12. SDK
+
+Opcionales: llaman a la misma API, con la autenticación, la idempotencia, los errores con su código y la verificación de webhooks ya resueltos.
+
+```bash
+npm install @frandeone/ecf
+composer require frandeone/ecf-sdk
+```
+
+```ts
+import { FrandeEcf, FrandeEcfError } from '@frandeone/ecf';
+const ecf = new FrandeEcf({ apiKey: process.env.FRANDE_ECF_KEY!, ambiente: 'TesteCF' });
+const r = await ecf.emitir(payload, { idempotencyKey: `venta-${venta.id}` });
+```
+
+```php
+$ecf = new Frande\Ecf\Client(getenv('FRANDE_ECF_KEY'), 'TesteCF');
+$r = $ecf->emitir($payload, 'venta-' . $venta['id']);
+```
+
+Guía de cada uno: [sdk/typescript](sdk/typescript) · [sdk/php](sdk/php).
+
+## 13. Pruebas
+
+- **Colección Bruno** en [`bruno/`](bruno): todas las operaciones listas para probar contra `TesteCF`. Abre la carpeta en [Bruno](https://www.usebruno.com), elige el ambiente `TesteCF` y pon tu credencial `foecf_test_…` (se guarda como secreto, no en el archivo).
+- **Casos de prueba de integración** del sandbox: 12 casos que Frande ECF detecta solo mientras pruebas. Ver [guia/casos-de-prueba.md](guia/casos-de-prueba.md).
+- **Pruebas de los SDK:** `npm test` en `sdk/typescript` y `php sdk/php/tests/run.php`. Corren solas en cada cambio (GitHub Actions).
+
+## 14. Guía completa
+
+| Tema | Página |
+|---|---|
+| Inicio rápido | [inicio-rapido](guia/inicio-rapido.md) |
+| Conecta tu sistema | [conecta-tu-sistema](guia/conecta-tu-sistema.md) |
+| Ambientes y credenciales | [ambientes-y-credenciales](guia/ambientes-y-credenciales.md) |
+| Emitir un e-CF (los 10 tipos) | [emitir](guia/emitir.md) |
+| Casos de prueba del sandbox | [casos-de-prueba](guia/casos-de-prueba.md) |
+| Numeración | [numeracion](guia/numeracion.md) |
+| Idempotencia y reintentos | [idempotencia](guia/idempotencia.md) |
+| Estados, consultas y archivos | [estados-y-consultas](guia/estados-y-consultas.md) |
+| Corregir y anular | [corregir-y-anular](guia/corregir-y-anular.md) |
+| Recibidos y aprobación comercial | [recibidos](guia/recibidos.md) |
+| Contingencia | [contingencia](guia/contingencia.md) |
+| Webhooks y verificación de firma | [webhooks](guia/webhooks.md) |
+| Catálogo de errores | [errores](guia/errores.md) |
+| Límites y planes | [limites-y-planes](guia/limites-y-planes.md) |
+| Developers y revendedores | [developers-y-revendedores](guia/developers-y-revendedores.md) |
+| Referencia y registro de cambios | [referencia](guia/referencia.md) |
+| Texto para asistentes de IA | [llms.txt](guia/llms.txt) |
+
+## 15. Soporte
+
+- **Dudas o fallos de integración:** abre un [issue](https://github.com/franklindemanchedelizon/Integracion_Frande-ECF/issues/new/choose) (nunca pegues tu credencial ni datos de clientes).
+- **Problemas de seguridad:** escribe a soporte@frandeone.com, no en un issue público. Ver [SECURITY.md](SECURITY.md).
+- **Soporte directo:** soporte@frandeone.com · 809-765-3566 (teléfono y WhatsApp) · https://ecf.frandeone.com
+- Incluye siempre el `requestId` de la respuesta.
 
 ---
 
-Frande One es un producto de Frande Connection SRL, San Pedro de Macorís, República Dominicana.
+<p align="center">Frande One · Frande Connection SRL · San Pedro de Macorís, República Dominicana · <a href="https://www.frandeone.com">www.frandeone.com</a></p>

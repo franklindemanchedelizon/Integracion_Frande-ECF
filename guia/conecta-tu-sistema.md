@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/conecta-tu-sistema.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Conecta tu sistema
 
@@ -32,9 +31,7 @@ Cada sistema manda la clave de una manera. El ECF acepta las cuatro, así que no
 | `Authorization` sin la palabra Bearer | `Authorization: foecf_test_…` |
 | `ApiKey` | `ApiKey: foecf_test_…` |
 
-> i
-
-Estas variantes solo se reconocen si el valor tiene forma de credencial del ECF (`foecf_test_`, `foecf_live_`, `foecf_dev_` o la clave original `ecf_sk_`). Un token de otra clase no se toma como clave.
+> ℹ️ Estas variantes solo se reconocen si el valor tiene forma de credencial del ECF (`foecf_test_`, `foecf_live_`, `foecf_dev_` o la clave original `ecf_sk_`). Un token de otra clase no se toma como clave.
 
 ## Probar la conexión
 
@@ -55,9 +52,7 @@ La pantalla de facturación electrónica de tu sistema pide más o menos estos c
 | RNC del emisor | El RNC de tu empresa |
 | Código de sucursal (`001`) | La sucursal de la credencial |
 
-> i
-
-Los nombres de los campos cambian de un sistema a otro. Si tu sistema te pide un formato de documento que no es el del ECF, escríbenos antes de configurarlo en producción.
+> ℹ️ Los nombres de los campos cambian de un sistema a otro. Si tu sistema te pide un formato de documento que no es el del ECF, escríbenos antes de configurarlo en producción.
 
 ## Pasar de pruebas a producción
 

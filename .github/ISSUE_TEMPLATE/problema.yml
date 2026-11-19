@@ -1,0 +1,30 @@
+name: Problema de integración
+description: Algo de la API, de un SDK o de la guía no funciona como dice la documentación.
+labels: [problema]
+body:
+  - type: markdown
+    attributes:
+      value: "⚠️ **Nunca pegues tu credencial, tu certificado ni datos reales de clientes.** Usa TesteCF y datos de prueba."
+  - type: dropdown
+    id: donde
+    attributes:
+      label: ¿Dónde?
+      options: [API, SDK TypeScript, SDK PHP, Colección Bruno, Guía, Otro]
+    validations: { required: true }
+  - type: dropdown
+    id: ambiente
+    attributes:
+      label: Ambiente
+      options: [TesteCF, eCF]
+    validations: { required: true }
+  - type: input
+    id: requestid
+    attributes:
+      label: requestId de la respuesta
+      placeholder: 6f1c2b8e-…
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué hiciste, qué esperabas y qué pasó
+      description: Petición (sin la credencial), respuesta con su código de error y versión del SDK si aplica.
+    validations: { required: true }

@@ -3,7 +3,7 @@
 PHP 8.1+ con `curl` y `json`, sin dependencias.
 
 ```bash
-composer require frande/ecf-sdk
+composer require frandeone/ecf-sdk
 ```
 
 ```php

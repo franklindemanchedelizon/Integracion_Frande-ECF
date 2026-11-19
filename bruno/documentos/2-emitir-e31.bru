@@ -1,0 +1,77 @@
+meta {
+  name: Emitir E31
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/{{env}}/documentos-ecf
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "ECF": {
+      "Encabezado": {
+        "Version": "1.0",
+        "IdDoc": {
+          "TipoeCF": "31",
+          "eNCF": "E310000000001",
+          "FechaVencimientoSecuencia": "31-12-2026",
+          "IndicadorNotaCredito": "0",
+          "IndicadorEnvioDiferido": "0",
+          "TipoIngresos": "01",
+          "TipoPago": "1"
+        },
+        "Emisor": {
+          "RNCEmisor": "130000001",
+          "RazonSocialEmisor": "Empresa Emisora SRL",
+          "DireccionEmisor": "Calle Principal #1",
+          "FechaEmision": "15-04-2026"
+        },
+        "Comprador": {
+          "RNCComprador": "401000001",
+          "RazonSocialComprador": "Cliente Ejemplo SRL",
+          "DireccionComprador": "Av. Independencia #100"
+        },
+        "Totales": {
+          "MontoGravadoTotal": 1000,
+          "MontoGravadoI1": 1000,
+          "ITBIS1": 18,
+          "TotalITBIS": 180,
+          "TotalITBIS1": 180,
+          "MontoTotal": 1180
+        }
+      },
+      "DetallesItems": {
+        "Item": [
+          {
+            "NumeroLinea": "1",
+            "IndicadorFacturacion": "1",
+            "NombreItem": "Servicio de consultoría",
+            "IndicadorBienoServicio": "2",
+            "CantidadItem": "1",
+            "MontoItem": 1000,
+            "DescuentoMonto": 0,
+            "MontoItemTotal": 1000
+          }
+        ]
+      }
+    },
+    "referencia_externa": "PED-2026-000123"
+  }
+}
+
+docs {
+  Cambia el eNCF por uno de tus secuencias. La Idempotency-Key se genera en cada envío (script pre-request).
+}
+
+script:pre-request {
+  req.setHeader('Idempotency-Key', 'bruno-' + Date.now());
+}
+
+script:post-response {
+  const d = res.getBody()?.data;
+  if (d?.internalTrackId) bru.setEnvVar('internalTrackId', d.internalTrackId);
+}

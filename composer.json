@@ -1,5 +1,5 @@
 {
-  "name": "frande/ecf-sdk",
+  "name": "frandeone/ecf-sdk",
   "description": "SDK PHP de Frande ECF: facturación electrónica (e-CF) DGII República Dominicana",
   "type": "library",
   "license": "MIT",

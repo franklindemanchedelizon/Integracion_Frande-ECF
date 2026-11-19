@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/emitir.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Emitir un e-CF
 
@@ -229,9 +228,7 @@ Con formato inválido recibes 400 `INVALID_REFERENCIA_EXTERNA` o `INVALID_SUCURS
 
 Son ejemplos mínimos: cámbialos por los datos de tu operación. **Todos pasan la validación del propio ECF** (una prueba automática de esta documentación los envía por la misma validación de `?validate=true` en cada cambio). Confirma las reglas fiscales de cada tipo con tu contador.
 
-> i
-
-Los ejemplos usan RNC ficticios (`131234567` de emisor). Para **validar** sirven tal cual; para **emitir**, cambia `RNCEmisor` por el RNC de tu empresa, que debe ser el mismo de tu cuenta y de tu certificado, o la DGII rechazará el documento.
+> ℹ️ Los ejemplos usan RNC ficticios (`131234567` de emisor). Para **validar** sirven tal cual; para **emitir**, cambia `RNCEmisor` por el RNC de tu empresa, que debe ser el mismo de tu cuenta y de tu certificado, o la DGII rechazará el documento.
 
 ### E31 · Factura de crédito fiscal
 

@@ -1,14 +1,11 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/developers-y-revendedores.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Developers y revendedores
 
 _Para quien compra un plan con una cantidad de documentos, integra el ECF en su software y lleva a sus clientes por la certificación y la integración._
 
-> i
-
-El portal propio de developers (`/developers`) está en construcción. Esta página dice qué existe hoy y marca lo que viene; no se ofrece nada que todavía no funcione.
+> ℹ️ El portal propio de developers (`/developers`) está en construcción. Esta página dice qué existe hoy y marca lo que viene; no se ofrece nada que todavía no funcione.
 
 ## Lo que hay hoy
 

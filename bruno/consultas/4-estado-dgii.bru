@@ -1,0 +1,12 @@
+meta {
+  name: Estado en vivo ante la DGII
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/{{env}}/documentos-ecf/{{internalTrackId}}/status
+  body: none
+  auth: none
+}
+

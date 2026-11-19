@@ -3,11 +3,11 @@
 Node 18+ (usa `fetch` nativo), sin dependencias en tiempo de ejecución.
 
 ```bash
-npm install @frande/ecf
+npm install @frandeone/ecf
 ```
 
 ```ts
-import { FrandeEcf, FrandeEcfError, verificarWebhook } from '@frande/ecf';
+import { FrandeEcf, FrandeEcfError, verificarWebhook } from '@frandeone/ecf';
 
 const ecf = new FrandeEcf({ apiKey: process.env.FRANDE_ECF_KEY!, ambiente: 'TesteCF' });
 

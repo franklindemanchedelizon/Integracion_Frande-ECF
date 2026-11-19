@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/corregir-y-anular.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Corregir y anular
 
@@ -23,9 +22,7 @@ Si el `NCFModificado` es un e-CF, debe existir en tu cuenta, no estar rechazado,
 
 Para ver el JSON completo de cada nota, ve a [E34](emitir.md#e34) y [E33](emitir.md#e33).
 
-> i
-
-Corregir un documento _rechazado_ por la DGII no requiere nota: se corrige y se emite de nuevo. Si la DGII liberó el número, se puede reutilizar (ver [Numeración](numeracion.md#reutilizar)).
+> ℹ️ Corregir un documento _rechazado_ por la DGII no requiere nota: se corrige y se emite de nuevo. Si la DGII liberó el número, se puede reutilizar (ver [Numeración](numeracion.md#reutilizar)).
 
 ## Anular números sin usar (ANECF)
 

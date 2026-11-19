@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Soporte directo de Frande ECF
+    url: https://ecf.frandeone.com
+    about: Cuenta, planes, certificado o un documento concreto: escribe a soporte@frandeone.com o al 809-765-3566.
+  - name: Guía completa para integradores
+    url: https://ecf.frandeone.com/developers/docs/
+    about: Revisa la guía antes de abrir un issue.

@@ -1,0 +1,12 @@
+name: Pregunta
+description: Duda sobre cómo integrar algo.
+labels: [pregunta]
+body:
+  - type: markdown
+    attributes:
+      value: "⚠️ **Nunca pegues tu credencial ni datos reales de clientes.**"
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: Tu pregunta
+    validations: { required: true }

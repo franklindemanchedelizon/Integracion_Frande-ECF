@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="960" height="300" role="img" aria-labelledby="t d">
+  <title id="t">Flujo de un e-CF con Frande ECF</title>
+  <desc id="d">Tu sistema envía el JSON a Frande ECF, que valida, firma y genera el QR, responde de inmediato, lo envía a la DGII y te avisa el resultado por webhook.</desc>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F0D3F"/>
+      <stop offset="1" stop-color="#1a1760"/>
+    </linearGradient>
+    <linearGradient id="caja" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d1a5c"/>
+      <stop offset="1" stop-color="#15124a"/>
+    </linearGradient>
+    <filter id="brillo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#25A1FB"/>
+    </marker>
+    <path id="ida1" d="M220,120 L370,120"/>
+    <path id="ida2" d="M590,120 L740,120"/>
+    <path id="vuelta" d="M480,170 C480,250 110,250 110,170"/>
+    <path id="resp" d="M370,140 L220,140"/>
+  </defs>
+
+  <rect width="960" height="300" rx="18" fill="url(#fondo)"/>
+
+  <g font-family="Segoe UI, Inter, Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">
+    <!-- Tu sistema -->
+    <rect x="20" y="70" width="200" height="100" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55"/>
+    <text x="120" y="112" fill="#ffffff" font-size="18" font-weight="600">Tu sistema</text>
+    <text x="120" y="136" fill="#9fd4ff" font-size="12">ERP · POS · tienda · app</text>
+
+    <!-- Frande ECF -->
+    <rect x="370" y="55" width="220" height="130" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-width="2"/>
+    <text x="480" y="92" fill="#ffffff" font-size="19" font-weight="700">Frande ECF</text>
+    <text x="480" y="116" fill="#9fd4ff" font-size="12">valida · firma · QR</text>
+    <text x="480" y="134" fill="#9fd4ff" font-size="12">cola y reintentos</text>
+    <text x="480" y="152" fill="#9fd4ff" font-size="12">webhooks firmados</text>
+
+    <!-- DGII -->
+    <rect x="740" y="70" width="200" height="100" rx="14" fill="url(#caja)" stroke="#25A1FB" stroke-opacity=".55"/>
+    <text x="840" y="112" fill="#ffffff" font-size="18" font-weight="600">DGII</text>
+    <text x="840" y="136" fill="#9fd4ff" font-size="12">TesteCF · eCF</text>
+
+    <!-- líneas -->
+    <use href="#ida1" stroke="#25A1FB" stroke-width="2" fill="none" marker-end="url(#flecha)"/>
+    <use href="#ida2" stroke="#25A1FB" stroke-width="2" fill="none" marker-end="url(#flecha)"/>
+    <use href="#resp" stroke="#25A1FB" stroke-opacity=".5" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#flecha)"/>
+    <use href="#vuelta" stroke="#25A1FB" stroke-opacity=".6" stroke-width="2" stroke-dasharray="6 6" fill="none" marker-end="url(#flecha)"/>
+
+    <text x="295" y="108" fill="#ffffff" font-size="12">1 · JSON</text>
+    <text x="295" y="160" fill="#9fd4ff" font-size="11">2 · 201: e-NCF, código, QR</text>
+    <text x="665" y="108" fill="#ffffff" font-size="12">3 · envío</text>
+    <text x="295" y="270" fill="#9fd4ff" font-size="12">4 · webhook: aceptado · condicional · rechazado</text>
+
+    <!-- paquetes en movimiento -->
+    <circle r="6" fill="#25A1FB" filter="url(#brillo)">
+      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.25;1" calcMode="linear"><mpath href="#ida1"/></animateMotion>
+      <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.25;0.26;1" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="5" fill="#9fd4ff" filter="url(#brillo)">
+      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.3;0.45;1" calcMode="linear"><mpath href="#resp"/></animateMotion>
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.29;0.3;0.45;0.46;1" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="6" fill="#25A1FB" filter="url(#brillo)">
+      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.45;0.65;1" calcMode="linear"><mpath href="#ida2"/></animateMotion>
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.44;0.45;0.65;0.66;1" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="6" fill="#ffffff" filter="url(#brillo)">
+      <animateMotion dur="4s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.7;0.98;1" calcMode="linear"><mpath href="#vuelta"/></animateMotion>
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.69;0.7;0.98;1" dur="4s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

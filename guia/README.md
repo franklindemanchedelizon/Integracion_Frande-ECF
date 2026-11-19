@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/ · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Documentación para integradores
 
@@ -66,6 +65,4 @@ Si eres el cliente que configura un sistema que ya tienes (y no vas a programar)
 
 [### Referencia y registro de cambiosLa referencia técnica completa de cada ruta, el registro de cambios, el glosario y llms.txt.](referencia.md)
 
-> i
-
-Lo marcado Próximamente todavía no existe. Se dice así en cada página para que no pierdas tiempo buscándolo.
+> ℹ️ Lo marcado Próximamente todavía no existe. Se dice así en cada página para que no pierdas tiempo buscándolo.

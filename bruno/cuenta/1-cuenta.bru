@@ -1,0 +1,15 @@
+meta {
+  name: Probar conexión
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/{{env}}/cuenta
+  body: none
+  auth: none
+}
+
+docs {
+  Quién soy, ambiente efectivo y estado del certificado. No emite.
+}

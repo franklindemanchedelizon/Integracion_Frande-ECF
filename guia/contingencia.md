@@ -1,6 +1,5 @@
 <!-- Generado desde https://ecf.frandeone.com/developers/docs/contingencia.html · no editar a mano: se regenera desde el ECF -->
 
-Pégalo en tu asistente para que te ayude a integrar. También puedes darle el enlace de [llms.txt](https://ecf.frandeone.com/developers/docs/llms.txt).
 
 # Contingencia
 
@@ -15,9 +14,7 @@ Fuente de las reglas: Ley 32-23, Decreto 587-24 (art. 40) y el Instructivo de Co
 - Cuando la DGII vuelve, el documento avanza solo y recibes el aviso por [webhook](webhooks.md).
 - Los documentos que no se pueden enviar no se pierden: siguen consultables y se ven en el portal.
 
-> i
-
-Nunca dependas de que el ECF "decida" tu contingencia: lo que sigue es la regla de la DGII y lo declara el contribuyente.
+> ℹ️ Nunca dependas de que el ECF "decida" tu contingencia: lo que sigue es la regla de la DGII y lo declara el contribuyente.
 
 ## Falta de conectividad: 72 horas
 

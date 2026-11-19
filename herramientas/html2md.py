@@ -185,6 +185,9 @@ class Conv(HTMLParser):
         md = re.sub(r'[ \t]+\n', '\n', md)
         md = re.sub(r'\n{3,}', '\n\n', md)
         md = re.sub(r'(^|\n)(#+ ) +', r'\1\2', md)
+        md = re.sub(r'\b(GET|POST|PUT|DELETE|PATCH)`', r'\1 `', md)
+        md = re.sub(r'\nPégalo en tu asistente[^\n]*\n', '\n', md)
+        md = re.sub(r'\n> i\n\n([^\n]+)', r'\n> ℹ️ \1', md)
         return md.strip() + '\n'
 
 

@@ -1,0 +1,12 @@
+meta {
+  name: Listar documentos
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/{{env}}/documentos-ecf?limit=20
+  body: none
+  auth: none
+}
+
