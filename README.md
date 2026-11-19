@@ -41,13 +41,13 @@ Este repositorio es la guía de integración de **Frande ECF**, la facturación 
 
 Tu sistema envía el comprobante en JSON. Frande ECF revisa los campos y el esquema oficial de la DGII, **firma** el XML con el certificado digital de la empresa, genera el **código de seguridad** y el **QR**, responde en el acto y se encarga del envío a la DGII, de los reintentos y de avisarte el resultado. Tu sistema nunca toca certificados, firmas ni el protocolo de la DGII.
 
-<p align="center"><img src="assets/diagramas/1-arquitectura.svg" alt="Arquitectura: el frontend habla con tu backend, que guarda la credencial y llama a Frande ECF; Frande ECF responde con el código y el QR, envía a la DGII y avisa el resultado a tu endpoint de webhooks." width="100%"></p>
+<p align="center"><img src="assets/diagramas/1-arquitectura.svg" alt="Arquitectura: el frontend habla con tu backend, que guarda la credencial y llama a Frande ECF; Frande ECF responde con el código y el QR, envía a la DGII y avisa el resultado a tu endpoint de webhooks." width="620"></p>
 
 **La credencial vive solo en tu backend.** Nunca la pongas en una página web, en una app móvil ni en un frontend (React, Vue, Angular, Flutter…): cualquiera podría leerla. El frontend le habla a tu backend y tu backend a Frande ECF.
 
 ## 2. Dos formas de integrarte
 
-<p align="center"><img src="assets/diagramas/2-dos-vias.svg" alt="Dos formas de integrarse: una empresa con su propio sistema, o un integrador que administra a varios clientes, cada uno con su cuenta, su certificado y su credencial." width="100%"></p>
+<p align="center"><img src="assets/diagramas/2-dos-vias.svg" alt="Dos formas de integrarse: una empresa con su propio sistema, o un integrador que administra a varios clientes, cada uno con su cuenta, su certificado y su credencial." width="620"></p>
 
 | | Empresa con su propio sistema | Integrador / desarrollador |
 |---|---|---|
@@ -131,7 +131,7 @@ Respuesta (`201`):
 
 ## 6. Estados del documento
 
-<p align="center"><img src="assets/diagramas/4-estados.svg" alt="Estados del documento: en_cola, recibido, procesando, aceptado o rechazado; error si se agotan los reintentos." width="100%"></p>
+<p align="center"><img src="assets/diagramas/4-estados.svg" alt="Estados del documento: en_cola, recibido, procesando, aceptado o rechazado; error si se agotan los reintentos." width="620"></p>
 
 | `estado_dgii` | Qué significa | Qué haces |
 |---|---|---|
