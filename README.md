@@ -2,6 +2,8 @@
 
 Guía, contrato y SDK para integrar cualquier sistema (ERP, punto de venta, tienda en línea, app) con **Frande ECF**, el servicio de facturación electrónica (e-CF) de Frande One para la **DGII de República Dominicana**.
 
+> **Este repositorio es solo de integración.** El servicio Frande ECF no se descarga ni se instala: corre en la nube de Frande y tu sistema lo usa por su API. Aquí está cómo conectarte, qué enviar, qué te responde y cómo recibir cada estado y aviso. Los SDK son opcionales: librerías que puedes agregar a tu propio proyecto para llamar a la API con menos código.
+
 Tu sistema envía el comprobante en JSON. Frande ECF lo convierte a XML, lo **firma** con el certificado digital de tu empresa, genera el código de seguridad y el QR, lo **envía a la DGII**, sigue su estado y te avisa por webhook. Tú no manejas certificados, firmas ni el protocolo de la DGII.
 
 | | |
@@ -12,6 +14,33 @@ Tu sistema envía el comprobante en JSON. Frande ECF lo convierte a XML, lo **fi
 | Portal (cuenta, credenciales, certificado, webhooks) | https://ecf.frandeone.com |
 | SDK TypeScript / Node | [`sdk/typescript`](sdk/typescript) |
 | SDK PHP | [`sdk/php`](sdk/php) |
+| **Guía completa para integradores** | [`guia/`](guia/README.md) (la misma de https://ecf.frandeone.com/developers/docs/) |
+
+## Guía completa
+
+Todo lo que necesitas para integrar tu sistema, página por página:
+
+| Tema | Página |
+|---|---|
+| Inicio rápido (de cero a tu primer e-CF en TesteCF) | [guia/inicio-rapido.md](guia/inicio-rapido.md) |
+| Conecta tu sistema (arquitectura, qué guardar, en qué orden) | [guia/conecta-tu-sistema.md](guia/conecta-tu-sistema.md) |
+| Ambientes y credenciales | [guia/ambientes-y-credenciales.md](guia/ambientes-y-credenciales.md) |
+| **Emitir un e-CF** (cuerpo JSON y ejemplo completo de los 10 tipos) | [guia/emitir.md](guia/emitir.md) |
+| Casos de prueba del sandbox | [guia/casos-de-prueba.md](guia/casos-de-prueba.md) |
+| Numeración e-NCF | [guia/numeracion.md](guia/numeracion.md) |
+| Idempotencia y reintentos | [guia/idempotencia.md](guia/idempotencia.md) |
+| **Estados, consultas y archivos** (todos los estados y qué hacer con cada uno) | [guia/estados-y-consultas.md](guia/estados-y-consultas.md) |
+| Corregir y anular (notas de crédito y débito, ANECF) | [guia/corregir-y-anular.md](guia/corregir-y-anular.md) |
+| Recibidos y aprobación comercial (ARECF, ACECF) | [guia/recibidos.md](guia/recibidos.md) |
+| Contingencia | [guia/contingencia.md](guia/contingencia.md) · resumen del instructivo DGII: [docs/contingencia-dgii.md](docs/contingencia-dgii.md) |
+| **Webhooks** (todos los eventos, su cuerpo y la verificación de firma) | [guia/webhooks.md](guia/webhooks.md) |
+| **Catálogo de errores** (cada código, causa y qué hacer) | [guia/errores.md](guia/errores.md) |
+| Límites y planes | [guia/limites-y-planes.md](guia/limites-y-planes.md) |
+| Developers y revendedores | [guia/developers-y-revendedores.md](guia/developers-y-revendedores.md) |
+| Referencia y registro de cambios | [guia/referencia.md](guia/referencia.md) |
+| Texto para asistentes de IA | [guia/llms.txt](guia/llms.txt) |
+
+Las páginas de `guia/` se generan desde el ECF; si algo no coincide, manda la versión publicada en https://ecf.frandeone.com/developers/docs/.
 
 ---
 
@@ -140,7 +169,7 @@ Emisión: 30 por minuto por cuenta. Al pasarte recibes `429` con `Retry-After`. 
 
 ## 10. Contingencia (qué hacer si algo falla)
 
-Resumen del *Instructivo de Contingencia de Facturación Electrónica* de la DGII y del Decreto 587-24 (arts. 39 a 43). La guía completa está en [`docs/contingencia.md`](docs/contingencia.md).
+Resumen del *Instructivo de Contingencia de Facturación Electrónica* de la DGII y del Decreto 587-24 (arts. 39 a 43). Detalle en [`guia/contingencia.md`](guia/contingencia.md) y en [`docs/contingencia-dgii.md`](docs/contingencia-dgii.md).
 
 | Qué falla | Qué pasa | Qué haces tú |
 |---|---|---|
@@ -148,10 +177,12 @@ Resumen del *Instructivo de Contingencia de Facturación Electrónica* de la DGI
 | **Tu conexión** a Frande ECF | Tu sistema no recibe la firma | Reintenta con la **misma** `Idempotency-Key`. Si no se recupera, sigue la fila de abajo |
 | **No puedes emitir e-CF** (corte prolongado) | Contingencia formal | Tu empresa declara la **entrada en contingencia** en la Oficina Virtual de la DGII (Facturación Electrónica → Contingencia FE), emite comprobantes **serie B** autorizados (máximo 15 días), declara la **salida** y, en 30 días, envía los e-CF que **reemplazan** esos comprobantes (código de modificación 4, solo a la DGII) |
 
-## 11. SDK
+## 11. SDK (opcional)
 
-- **TypeScript / Node 18+:** [`sdk/typescript`](sdk/typescript)
-- **PHP 8.1+:** [`sdk/php`](sdk/php)
+No son obligatorios: puedes llamar a la API directamente con HTTP desde cualquier lenguaje. Si usas TypeScript/Node o PHP, estas librerías ya traen la autenticación, la idempotencia, los errores con su código y la verificación de la firma de los webhooks. Se agregan a tu proyecto con:
+
+- **TypeScript / Node 18+:** [`sdk/typescript`](sdk/typescript) · `npm install @frande/ecf`
+- **PHP 8.1+:** [`sdk/php`](sdk/php) · `composer require frande/ecf-sdk`
 
 Para otros lenguajes, genera un cliente desde [`openapi/frande-ecf-v1.openapi.json`](openapi/frande-ecf-v1.openapi.json) con OpenAPI Generator o con la herramienta de tu preferencia.
 

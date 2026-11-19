@@ -3,7 +3,7 @@
 PHP 8.1+ con `curl` y `json`, sin dependencias.
 
 ```bash
-composer require frande/ecf-sdk   # cuando se publique; mientras tanto, copia src/ y usa su autoload PSR-4
+composer require frande/ecf-sdk
 ```
 
 ```php

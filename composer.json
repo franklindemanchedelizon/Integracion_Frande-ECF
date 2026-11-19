@@ -1,0 +1,13 @@
+{
+  "name": "frande/ecf-sdk",
+  "description": "SDK PHP de Frande ECF: facturación electrónica (e-CF) DGII República Dominicana",
+  "type": "library",
+  "license": "MIT",
+  "homepage": "https://github.com/franklindemanchedelizon/Integracion_Frande-ECF",
+  "keywords": ["e-cf", "dgii", "facturacion-electronica", "republica-dominicana", "frande"],
+  "authors": [{ "name": "Frande Connection SRL", "homepage": "https://www.frandeone.com" }],
+  "support": { "email": "soporte@frandeone.com", "docs": "https://ecf.frandeone.com/developers/docs/" },
+  "require": { "php": ">=8.1", "ext-curl": "*", "ext-json": "*" },
+  "autoload": { "psr-4": { "Frande\\Ecf\\": "sdk/php/src/" } },
+  "archive": { "exclude": ["/sdk/typescript", "/guia", "/openapi", "/ejemplos", "/herramientas", "/docs"] }
+}

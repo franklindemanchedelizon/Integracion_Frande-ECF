@@ -1,0 +1,39 @@
+# Frande One ECF · Documentación para integradores
+
+> API REST para emitir, consultar y anular comprobantes fiscales electrónicos (e-CF) de la DGII de República Dominicana. Base: https://ecf.frandeone.com/v1. Autenticación: encabezado X-API-Key con una credencial foecf_test_ (pruebas, ruta /v1/TesteCF) o foecf_live_ (producción, ruta /v1/eCF). Toda prueba va a TesteCF. Idioma: español.
+
+## Documentación
+
+- [Introducción](https://ecf.frandeone.com/developers/docs/): API para emitir, consultar y anular comprobantes fiscales electrónicos (e-CF) de la DGII: guía completa para integradores.
+- [Inicio rápido](https://ecf.frandeone.com/developers/docs/inicio-rapido): De cero a tu primer e-CF de prueba en TesteCF, con curl, en unos minutos.
+- [Conecta tu sistema](https://ecf.frandeone.com/developers/docs/conecta-tu-sistema): Qué copiar de la sección «Credenciales de API» del portal y dónde pegarlo en el sistema de facturación que ya usas.
+- [Ambientes y credenciales](https://ecf.frandeone.com/developers/docs/ambientes-y-credenciales): La credencial decide el ambiente. Prefijos, cómo se crean y rotan, y el paso por la certificación de la DGII.
+- [Emitir un e-CF](https://ecf.frandeone.com/developers/docs/emitir): Cómo armar y enviar cada tipo de e-CF, con un ejemplo validado por tipo.
+- [Casos de prueba del sandbox](https://ecf.frandeone.com/developers/docs/casos-de-prueba): Los 12 casos con los que el ECF comprueba que tu sistema quedó bien conectado, cada uno con su JSON.
+- [Numeración](https://ecf.frandeone.com/developers/docs/numeracion): Quién asigna el e-NCF, qué valida el ECF y cómo evitar huecos y repetidos.
+- [Idempotencia y reintentos](https://ecf.frandeone.com/developers/docs/idempotencia): Cómo reintentar una petición sin duplicar un documento.
+- [Estados, consultas y archivos](https://ecf.frandeone.com/developers/docs/estados-y-consultas): Cómo seguir un documento hasta su estado final y descargar sus archivos.
+- [Corregir y anular](https://ecf.frandeone.com/developers/docs/corregir-y-anular): Cómo corregir un documento ya emitido con notas, y cómo anular números que no se usaron.
+- [Recibidos y aprobación comercial](https://ecf.frandeone.com/developers/docs/recibidos): Los e-CF que te emiten tus proveedores: acuse automático, y cómo los apruebas o rechazas.
+- [Contingencia](https://ecf.frandeone.com/developers/docs/contingencia): Qué hace el ECF si la DGII o la conexión fallan, y qué debe hacer tu sistema.
+- [Webhooks y verificación de firma](https://ecf.frandeone.com/developers/docs/webhooks): Recibe en tu servidor el cambio de estado de tus documentos, y comprueba que el aviso viene del ECF.
+- [Catálogo de errores](https://ecf.frandeone.com/developers/docs/errores): Todos los códigos de error que puede devolver la API, qué significan y qué hacer.
+- [Límites y planes](https://ecf.frandeone.com/developers/docs/limites-y-planes): Los límites de ritmo de la API, el tamaño máximo, y los planes vigentes (siempre leídos del servicio).
+- [Developers y revendedores](https://ecf.frandeone.com/developers/docs/developers-y-revendedores): Qué hay hoy para quien integra el ECF para sus propios clientes, y qué viene.
+- [Referencia y registro de cambios](https://ecf.frandeone.com/developers/docs/referencia): La referencia técnica completa de cada ruta, el registro de cambios, el glosario y llms.txt.
+
+## Referencia
+
+- [Referencia interactiva (Scalar)](https://ecf.frandeone.com/api-docs): cada ruta pública con parámetros, cuerpos y respuestas.
+- [OpenAPI público](https://ecf.frandeone.com/openapi.json): especificación OpenAPI 3 del contrato público de /v1, sin sesión.
+
+## Reglas que conviene respetar
+
+- Una credencial foecf_test_ solo opera en /v1/TesteCF; una foecf_live_, solo en /v1/eCF. Ninguna prueba se envía a producción.
+- Con credenciales foecf_* la cabecera Idempotency-Key es obligatoria al emitir, anular, aprobar y rechazar.
+- Programa la lógica contra error.code (estable), no contra el mensaje. Cita el requestId al pedir soporte.
+- Los planes y precios se leen de GET https://ecf.frandeone.com/api/public/plans; no están fijos en la documentación.
+
+## Opcional
+
+- [Registro de cambios y glosario](https://ecf.frandeone.com/developers/docs/referencia#cambios): cambios del contrato público y términos de la DGII.

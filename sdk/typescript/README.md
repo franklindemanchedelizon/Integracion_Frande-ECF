@@ -3,7 +3,7 @@
 Node 18+ (usa `fetch` nativo), sin dependencias en tiempo de ejecución.
 
 ```bash
-npm install @frande/ecf   # cuando se publique; mientras tanto, copia src/index.ts
+npm install @frande/ecf
 ```
 
 ```ts
